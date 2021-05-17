@@ -1,0 +1,86 @@
+---
+title: "Data & Namespace Usage"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # Set WD to Root
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(tidyverse)
+
+```
+
+# Namespace usage
+
+```{r}
+require(tidyselect)
+require(rlang)
+require(dplyr)
+require(purrr)
+require(tidyr)
+require(stringr)
+require(lubridate)
+```
+
+
+
+# Read Responses
+
+
+## Techno
+
+```{r}
+tech_resp_ls_raw <- lbr::rd(read_csv, path = "data/Responses", pattern = "Techno")
+
+tech_resp_df1_raw <- tech_resp_ls_raw$Techno_1_resp_essay
+tech_resp_df2_raw <- tech_resp_ls_raw$`Techno_2_resp_no-essay`
+```
+
+## 319: RS case 4
+
+```{r}
+rs4_resp_ls <- lbr::rd(read_csv, path = "data/Responses", pattern = "RS4")
+```
+
+
+```{r}
+tech_resp_df1_raw 
+
+rs4_resp_ls
+```
+
+```{r}
+tech_resp_df2_raw
+```
+
+
+# Read Grades
+
+## Techno Only Numeric Grade
+
+```{r}
+tech_grad_ls_raw <- lbr::rd(read_csv, path = "data/Grades", pattern = "_num")
+
+tech_grad_df2_raw <- tech_grad_ls_raw$Techno_2_grade_num
+```
+
+## Non-numeric Grades file
+
+```{r}
+tech_nograd_df1 <- read_csv("data/Grades/Techno_1_grade_notyet.csv")
+```
+
+
+
+## Multiple Attempt Grades
+
+```{r}
+tm_mgrad_raw <- read_csv("./data/Grades/TM_grade_num_multi.csv")
+
+f2_mgrad_raw <- read_csv("data/Grades/SIID222_Formative_2_num_multi.csv")
+
+tm_mgrad_raw 
+f2_mgrad_raw
+```
+
+

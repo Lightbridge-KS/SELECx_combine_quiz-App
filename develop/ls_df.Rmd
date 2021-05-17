@@ -1,0 +1,179 @@
+---
+title: "GS3 Class: ls_df"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # Set WD to Root
+library(tidyverse)
+library(testthat)
+```
+
+# Create `ls_df`: list of data.frame class
+
+## Triage Class
+
+DF -> return DF
+list of DF -> set to ls_df class -> return list of DF
+otherwise -> Error msg
+
+```{r triage_ls_df}
+triage_ls_df <- function(x) {
+  
+  # If it's a data frame: return input
+  if(is.data.frame(x)) return(x)
+  # If already "ls_df" class: return input
+  if(inherits(x, "ls_df")) return(x)
+  # If it's a list of data frame; set class to ls_df then return
+  if(is_list_data.frame(x)){
+    x_ls_df <- new_ls_df(x)
+    return(x_ls_df)
+  }else{
+  # Otherwise, Error MSG  
+    x_labs <- rlang::as_label(rlang::enexpr(x))
+    stop(x_labs, " must be data.frame or list of data.frame", call. = F)
+  }
+}
+
+triage_ls_df(tech_grad_df2_raw)
+triage_ls_df(tech_grad_ls_raw) 
+triage_ls_df(expr(xy))
+```
+
+
+## Class Constructor
+
+```{r new_ls_df}
+new_ls_df <- function(x) {
+  
+  # Check if it is list of data frame
+  if(!is_list_data.frame(x)) stop("`x` is not a list of data.frame", call. = F)
+  
+  # Assign new class: ls_df
+  structure(x, class = c("ls_df", "list"))
+  
+}
+
+mt_iris <- new_ls_df(list(mtcars = mtcars,iris = iris))
+
+```
+
+Validate Class
+
+```{r}
+inherits(mt_iris, "ls_df")
+```
+
+
+This will Error because it's just a data frame.
+
+```{r}
+new_ls_df(tech_grad_df2_raw)
+```
+
+## Class Validator
+
+TRUE case: Outer layer is list and inner is all data.frame
+
+FALSE cases:
+
+1. Outer layer not list
+2. Outer layer is list, but inner is not all data.frame
+
+## Is it list of Data Frame?
+
+```{r is_list_data.frame}
+is_list_data.frame <- function(x, quiet = FALSE) {
+  
+  # Check if outer layer is data.frame
+  if(is.data.frame(x)){
+    if(!quiet) message("`x` is a data.frame, not a list of data.frame")
+    return( FALSE )
+  }
+  
+  # Check if outer layer is list
+  is_list <- inherits(x, "list") # this return TRUE if list, otherwise FALSE even if DF
+  if(!is_list){
+    if(!quiet) message("`x` is not a list")
+    return( is_list )
+  }
+
+  # Check if every elements of that list inherit data.frame class
+  is_element_df <- all(purrr::map_lgl(x, ~inherits(.x, "data.frame")))
+  if(!is_element_df){
+    if(!quiet) message("`x` is a list but its element is not all data.frame")
+    return( is_element_df )
+  }
+  
+  is_list & is_element_df
+}
+```
+
+## Is it Named list of Data Frame?
+
+```{r is_named_list_data.frame}
+is_named_list_data.frame <- function(x, quiet = FALSE) {
+  
+  # Check if outer layer is data.frame
+  if(is.data.frame(x)){
+    if(!quiet) message("`x` is a data.frame, not a list of data.frame")
+    return( FALSE )
+  }
+  
+  # Check if outer layer is list
+  is_list <- inherits(x, "list") # this return TRUE if list, otherwise FALSE even if DF
+  if(!is_list){
+    if(!quiet) message("`x` is not a list")
+    return( is_list )
+  }
+  # Check if list has names
+  if(is.null(names(x))){
+    if(!quiet) message("`x` is list but has no names")
+    return( FALSE )
+  }
+
+  # Check if every elements of that list inherit data.frame class
+  is_element_df <- all(purrr::map_lgl(x, ~inherits(.x, "data.frame")))
+  if(!is_element_df){
+    if(!quiet) message("`x` is a named list but its element is not all data.frame")
+    return( is_element_df )
+  }
+  
+  is_list & is_element_df
+}
+```
+
+# Testing: is_named_list_data.frame
+
+```{r}
+test_that("is_named_list_data.frame output is correct",{
+  
+  nl <- list(m = mtcars, m = iris)
+  l <- list(mtcars, iris)
+  df <- iris
+  vct <- 1:10
+  # Test Output
+  expect_true(is_named_list_data.frame(nl))
+  expect_false(is_named_list_data.frame(l))
+  expect_false(is_named_list_data.frame(df))
+  expect_false(is_named_list_data.frame(vct))
+  # Message
+  expect_message(is_named_list_data.frame(l), "is list but has no names")
+  expect_message(is_named_list_data.frame(df), "is a data.frame, not a list of data.frame")
+  expect_message(is_named_list_data.frame(vct), "is not a list")
+  
+})
+```
+
+
+
+```{r}
+is_named_list_data.frame(list(m = mtcars, m = iris))
+is_named_list_data.frame(list(mtcars, iris, 1:10))
+is_named_list_data.frame(tech_grad_df2_raw)
+is_named_list_data.frame(1:10)
+```
+
+
+
+

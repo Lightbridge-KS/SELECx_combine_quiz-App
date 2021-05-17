@@ -1,0 +1,23 @@
+---
+title: "Count Responses"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # Set WD to Root
+library(tidyverse)
+
+```
+
+## Example
+
+```{r}
+tech_resp_df1_raw %>% 
+  combine_resp.data.frame() %>% 
+  mutate(across(starts_with("R"), ~na_if(.x, "-"))) %>% 
+  rowwise() %>% 
+  mutate(Count = sum(!is.na(c_across(starts_with("R")))))
+```
+
+
+

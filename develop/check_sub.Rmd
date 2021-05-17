@@ -1,0 +1,167 @@
+---
+title: "Moodle Check Submission"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # Set WD to Root
+library(tidyverse)
+
+```
+
+# Check Submission Workflow
+
+check_sub
+check_sub.list
+check_sub.data.frame
+
+## Generic Wrapper for DF and list of DF
+
+```{r check_sub}
+check_sub <- function(data,
+                      id_regex = ".*", # Extract ID from Email
+                      sep_name = " ", # Separate First name and Surname
+                      state = c("Finished", "In progress"),  
+                      # value in "State" column to encode
+                      encode = c(1,0),
+                      # encode argument `state` to 
+                      choose_encode = c("max", "min", "all"),
+                      choose_time = c("first", "last", "all"),
+                      ... # passed to `sep_col`
+                      ) {
+  
+  UseMethod("check_sub")
+  
+}
+
+check_sub(tech_grad_df2_raw)
+check_sub(tech_grad_ls_raw, sep_col = ": ", id_regex = "[:digit:]+")
+```
+
+Error if it's not moodle report 
+
+```{r}
+check_sub(iris)
+check_sub(list("a" = tech_grad_df2_raw,  
+               "b" = tech_resp_df1_raw))
+check_sub(list(tech_grad_df2_raw,  tech_resp_df1_raw))
+```
+
+
+
+## For list of DF
+
+Raw -> Clean -> Encode -> rename -> Join list & calculate total 
+
+Extra arg = sep_col
+
+
+
+```{r check_sub.list}
+check_sub.list <- function(data,
+                           id_regex = ".*", # Extract ID from Email
+                           sep_name = " ", # Separate First name and Surname
+                           sep_col = "_", # Separation of State and Encode column names
+                           # Encode
+                           state = c("Finished", "In progress"),
+                           encode = c(1,0),
+                           choose_encode = c("max", "min", "all"),
+                           choose_time = c("first", "last", "all")         
+                           ) {
+  
+  if(!is_named_list_data.frame(data)) stop("`data` must be named list of data.frame", call. = F)
+  is_data_moodle_rep <- purrr::every(data, is_report)
+  if(!is_data_moodle_rep) stop("Elements of `data` must be Moodle quiz report",call. = F)
+  
+  nm <- names(data)
+  
+  data_ls <- data %>% 
+    purrr::map(~check_sub.data.frame(.x,
+                                 id_regex = id_regex,
+                                 sep_name = sep_name,
+                                 state = state,
+                                 encode = encode,
+                                 choose_encode = choose_encode, 
+                                 choose_time = choose_time))
+  
+  data_df <-  data_ls %>% 
+    purrr::map(~dplyr::select(.x, Name, ID, State, Encode)) %>% 
+    # Prefix State and Encode column with names(list)
+    rename_with_ls_df_names(State, sep = sep_col) %>% 
+    rename_with_ls_df_names(Encode, sep = sep_col) %>% 
+    # Join list
+    purrr::reduce(dplyr::full_join, by = c("ID", "Name"))
+  
+    # Compute Total
+  data_df %>% 
+    dplyr::rowwise() %>% 
+    dplyr::mutate(Total = sum(dplyr::c_across(
+      tidyselect::vars_select_helpers$where(is.numeric)), na.rm = T)
+      ) %>% 
+    dplyr::ungroup()
+}
+
+tech_grad_ls_raw %>% check_sub.list(sep_col = ": ")
+```
+```{r}
+tech_grad_df2_raw %>% check_sub.list()
+list(iris, tech_grad_df2_raw) %>% check_sub.list()
+```
+
+
+
+```{r}
+tech_grad_ls_raw %>% 
+  map(check_sub.data.frame) %>% 
+  map(~select(.x, !Started)) %>% 
+  rename_with_ls_df(State, paste0("State_", names(tech_grad_ls_raw))) %>% 
+  rename_with_ls_df(Encode, paste0("Encode_", names(tech_grad_ls_raw))) %>% 
+  reduce(full_join, by = c("ID", "Name")) %>% 
+  
+  rowwise() %>% 
+  mutate(Total = sum(c_across(where(is.numeric)), na.rm = T)) %>% 
+  ungroup()
+```
+
+## For DF
+
+Raw -> Clean -> Encode
+
+```{r check_sub.data.frame}
+check_sub.data.frame <- function(data,
+                                 # Clean
+                                 id_regex = ".*", # Extract ID from Email
+                                 sep_name = " ", # Separate First name and Surname
+                                 # Encode
+                                 state = c("Finished", "In progress"),
+                                 encode = c(1,0),
+                                 choose_encode = c("max", "min", "all"),
+                                 choose_time = c("first", "last", "all")
+                                        ) {
+  
+  if(!is_report(data)) stop("`data` is not a moodle quiz report", call. = F)
+    
+  data %>% 
+    clean_moodle(extract_id = TRUE, id_regex = id_regex, sep_name = sep_name, 
+                 dash_na = FALSE, force_numeric = FALSE) %>% 
+    encode_moodle(state = state, 
+                  encode = encode, 
+                  choose_encode = choose_encode, 
+                  choose_time = choose_time)
+  
+}
+
+tm_mgrad_raw %>% 
+  check_sub.data.frame(encode = c(2, 0), choose_encode = "all", choose_time = "first")
+
+```
+
+
+```{r}
+tech_grad_df2_raw %>% 
+  clean_moodle() %>% 
+  encode_moodle() 
+```
+
+
+

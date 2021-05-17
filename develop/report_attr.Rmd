@@ -1,0 +1,248 @@
+---
+title: "Report Attribute & Class: Grades vs Responses"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # Set WD to Root
+library(tidyverse)
+library(testthat)
+```
+
+
+# Extract Attribute from Column names
+
+```{r get_quiz_attr}
+get_quiz_attr <- function(data) {
+  
+  if(!is_report(data)) stop("`data` is not a moodle quiz report", call. = F)
+  # Maximum Grade
+  max_gr <- get_max_grade(data)
+  some_nyg <- is_some_grade_nyg(data) # Is some student not yet graded?
+  # If data is Grade Report, Get Questions Number and Max 
+  if(is_grades_report(data)){
+  q_no_max <- get_questions_no_max(data)
+  quiz_attr <- list(
+    report_type = "Grades",
+    some_nyg = some_nyg,
+    grade_max = max_gr, 
+    q_no = q_no_max$q_no, 
+    q_max = q_no_max$q_max
+    )
+  }
+  # If data is Responses Report, Get Responses Number
+  if(is_responses_report(data)){
+    resp_no <- get_responses_no(data)
+    cloze_cols <- get_cloze_col_names(data)
+    quiz_attr <- list(report_type = "Responses", 
+                      some_nyg = some_nyg,
+                      grade_max = max_gr, 
+                      resp_no = resp_no,
+                      cloze_cols = cloze_cols) # If NA = no cloze column
+    # If response has cloze col, append them
+    # if(has_cloze_col(data)){
+    # cloze_cols <- get_cloze_col_names(data)
+    # quiz_attr <- append(quiz_attr, list(cloze_cols = cloze_cols))
+    # }
+  }
+  
+  quiz_attr
+  
+}
+
+tech_grad_df2_raw %>% get_quiz_attr() 
+tech_resp_df1_raw %>% get_quiz_attr()
+```
+
+
+### Test
+
+```{r test get_quiz_attr}
+test_that("get_quiz_attr",{
+  
+  # Grades
+  grade_nm <- c("report_type", "some_nyg", "grade_max", "q_no", "q_max")
+  get_quiz_attr(tech_grad_df2_raw) %>% expect_named(grade_nm)
+  # Responses with Cloze
+  resp_nm <- c("report_type", "some_nyg", "grade_max",  "resp_no",  "cloze_cols" )
+  get_quiz_attr(tech_resp_df1_raw) %>% expect_named(resp_nm)
+  # Responses with no Cloe; no data 
+  
+  # Error
+  get_quiz_attr(tech_grad_ls_raw) %>% expect_error("`data` must be a data.frame")
+  get_quiz_attr(iris) %>% expect_error("is not a moodle quiz report")
+  
+  expect_equal(get_cloze_col_names(iris), NA_character_)
+  
+})
+```
+
+
+
+
+## Maxiumum quiz Grade
+
+Has this in all type of moodle report
+
+```{r get_max_grade}
+get_max_grade <- function(df_raw) {
+  
+  # Every moodle report has Maximum in Grade column name
+  nm <- names(df_raw)
+  gr_colnm <- stringr::str_subset(nm, "Grade")
+  # Extract digits (including decimal)
+  max_gr <- stringr::str_extract(gr_colnm, "[:digit:]+\\.?[:digit:]+$") 
+  as.numeric(max_gr)
+
+}
+
+get_max_grade(tech_grad_df2_raw)
+```
+
+
+```{r}
+tech_grad_df2_raw %>% 
+  names() %>% 
+  str_subset("Grade") %>% 
+  str_extract("[:digit:]+\\.?[:digit:]+$") %>% as.numeric()
+```
+
+
+## Questions number and maxium score
+
+```{r get_questions_no_max}
+get_questions_no_max <- function(df_gr) {
+  
+  nm <- names(df_gr)
+  q_colnm <- stringr::str_subset(nm, "Q")
+  # Question No: Extract first set of digits before / 
+  q_number <- as.integer(stringr::str_extract(q_colnm, "[:digit:]+"))
+  # Question Max: Extract everything after /
+  q_max <- as.numeric(stringr::str_extract(q_colnm, "(?<=/)(.+)"))
+  
+  data.frame(q_no = q_number, q_max = q_max)
+}
+
+tech_grad_df2_raw_q_attr <- tech_grad_df2_raw %>% get_questions_no_max()
+
+tech_grad_df2_raw_q_attr
+```
+Responses report 
+
+```{r}
+tech_resp_df1_raw %>% get_questions_no_max()
+```
+
+
+Question Number
+
+```{r}
+tech_grad_df2_raw %>% 
+  names() %>% 
+  str_subset("Q") %>% 
+  str_extract("[:digit:]+")
+```
+
+Question Maximum
+
+```{r}
+tech_grad_df2_raw %>% 
+  names() %>% 
+  str_subset("Q") %>% 
+  str_extract("(?<=/)(.+)")
+```
+
+## Responses Number
+
+```{r get_responses_no}
+get_responses_no <- function(df_resp) {
+  
+  nm <- names(df_resp)
+  resp_colnm <- stringr::str_subset(nm, "R")
+  resp_no <-  stringr::str_extract(resp_colnm, "[:digit:]+")
+  as.integer(resp_no)
+  
+}
+
+tech_resp_df1_raw %>% get_responses_no()
+```
+
+
+```{r}
+tech_resp_df1_raw %>% 
+  names() %>% 
+  str_subset("R") %>% 
+  str_extract("[:digit:]+") %>% 
+  as.integer()
+```
+
+# Class: grades
+
+```{r new_grades}
+new_grades <- function(df_raw) {
+  
+  # Check if colnames of x has "Surname", "First name", "Email address", "Grade", "Q"
+  if( !is_grades_report(df_raw)) stop("`df_raw` is not moodle's Grade report", call. = F)
+  
+  old_class <- class(df_raw)
+  max_grade <- get_max_grade(df_raw)
+  q_no_max <- get_questions_no_max(df_raw)
+  
+  structure(df_raw, class = c("grades", old_class), 
+            max_grade = max_grade,
+            q_max = q_no_max$q_max)
+  
+}
+
+tech_grad_df2_raw %>% new_grades() 
+tech_resp_df1_raw %>% new_grades() 
+```
+
+```{r}
+at <- tech_grad_df2_raw %>% 
+  new_grades() %>% attr("q_max")
+
+irisx <- iris
+
+attr(irisx, "q_max") <- at
+
+attributes(irisx)
+```
+
+
+```{r}
+tech_grad_df2_raw %>% 
+  new_grades() %>% 
+  attr("q_max")
+```
+
+
+# Class: responses
+
+```{r new_responses}
+new_responses <- function(df_raw) {
+  
+  # Check if colnames of x has "Surname", "First name", "Email address", "State", "Response"
+  if( !is_responses_report(df_raw)) stop("`df_raw` is not moodle's Responses report",call. = F)
+  
+  old_class <- class(df_raw)
+  max_grade <- get_max_grade(df_raw)
+
+  structure(df_raw, class = c("responses", old_class), max_grade = max_grade)
+  
+}
+
+tech_resp_df1_raw %>% 
+  new_responses() %>% 
+  attributes()
+
+tech_grad_df2_raw %>% new_responses() 
+```
+
+```{r}
+tech_resp_df1_raw %>% 
+  new_responses() %>% 
+  unite(Surname, `First name`, col = "Name", sep = " ") %>% attributes()
+```
+
+

@@ -1,0 +1,215 @@
+---
+title: "Cloze column from Moodle"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # Set WD to Root
+library(tidyverse)
+
+```
+
+## Data Cloze column
+
+```{r}
+cloze_cols_df <- tech_resp_df1_raw %>% 
+  clean_moodle() %>% 
+  encode_moodle() %>% 
+  select(Name, ID, Response_2)
+
+cloze_cols_df
+```
+
+## Find cloze column names
+
+```{r get_cloze_col_names}
+get_cloze_col_names <- function(df) {
+  
+  regex <- "part [:digit:]+:"
+  is_cloze_lgl <- df %>% 
+    purrr::map(~stringr::str_detect(.x, regex)) %>% 
+    purrr::map_lgl(any)
+  
+  nm <- names(which(is_cloze_lgl))
+  if(length(nm) == 0) return(NA_character_)
+  nm
+}
+
+cloze_cols_df %>% get_cloze_col_names()
+iris %>% get_cloze_col_names()
+```
+
+## Does DF has cloze column ?
+
+```{r has_cloze_col}
+has_cloze_col <- function(df) {
+  
+  regex <- "part [:digit:]+:"
+  is_cloze_lgl <- df %>% 
+    purrr::map(~stringr::str_detect(.x, regex)) %>% 
+    purrr::map_lgl(any)
+  
+  any(is_cloze_lgl, na.rm = T)
+}
+
+iris %>% has_cloze_col()
+cloze_cols_df %>% has_cloze_col()
+```
+
+
+```{r}
+cloze_cols_df %>% 
+  map(~str_detect(.x, cloze_regex)) %>% 
+  map_lgl(any) %>% any()
+```
+
+
+Split Cloze to multiple Rows & to Columns
+
+```{r}
+cloze_string <- c("part 1: เพิ่มขึ้น; part 2: ลดลง; part 3: ลดลง")
+```
+
+```{r}
+cloze_string %>% 
+  str_split(";") %>% 
+  str_trim(side = "both") %>% writeLines()
+```
+
+# Automatic Split Cloze columns
+
+Input as any DF that has cloze content in column
+
+```{r split_cloze}
+split_cloze <- function(data, part_glue = "_part_") {
+  
+  if(!is.data.frame(data)) stop("`data` must be a data.frame", call. = F)
+  if(!has_cloze_col(data)) stop("`data` must have at leat one Cloze Response column.", 
+                                call. = F)
+  cloze_col_nm <- get_cloze_col_names(data)
+  # Split data into response col and non-responses col
+  resp_df <- data %>% dplyr::select(tidyselect::starts_with("R"))
+  non_resp_df <- data %>% dplyr::select(!tidyselect::starts_with("R"))
+  
+  # Get Cloze col names and col number; relative to splited df
+  cloze_resp_no <- as.integer(stringr::str_extract(cloze_col_nm, "[:digit:]+")) 
+  # Interger vector response No 
+  resp_no <- as.integer(stringr::str_extract(names(resp_df), "[:digit:]+"))
+  cloze_i <- match(cloze_resp_no, resp_no) # Index of cloze resp
+  # Get Non-Cloze col names and col number; relative to splited df
+  non_cloze_col_nm <- names(resp_df)[-cloze_i]
+  non_cloze_resp_no <- resp_no[-cloze_i]  # Resp No of non-cloze
+
+  # Ls_df Splited cloze responses (one column for each ls_df)
+  cloze_ls_df <- cloze_col_nm %>%
+   purrr::map(
+    ~split_cloze_col(dplyr::select(resp_df, !!.x), !!.x , 
+                     split_type = "cols", part_glue = part_glue)
+    ) %>% 
+   stats::setNames(cloze_resp_no)
+  
+  # Ls_df of non-cloze responses (one column for each ls_df)
+  non_cloze_ls_df <- non_cloze_col_nm %>% 
+    map(~dplyr::select(resp_df, !!.x)) %>% 
+    stats::setNames(non_cloze_resp_no)
+  # Join list of cloze and non-cloze
+  resp_ls_df <- append(cloze_ls_df, non_cloze_ls_df)
+  # Order by Name
+  resp_ls_df <- resp_ls_df[order(names(resp_ls_df))]
+  
+  # Bind everything
+  dplyr::bind_cols(non_resp_df, resp_ls_df)
+}
+
+tech_resp_df1_raw %>% 
+  clean_moodle() %>% 
+  split_cloze(part_glue = ".") %>% 
+  names()
+```
+
+
+
+```{r}
+split_cloze(tech_resp_df2_raw) %>% names()
+```
+
+
+
+# Split Cloze column (1 col)
+
+```{r split_cloze_col}
+split_cloze_col <- function(data, col, 
+                            split_type = c("cols","rows"),
+                            part_glue = "_part_"
+                            ) {
+  
+  split_type <- match.arg(split_type)
+  col <- rlang::ensym(col)
+  col_labs <- rlang::as_label(col)
+  regex <- "part [:digit:]+:"
+  
+  # Extract How many "part"; max() to exclude "-" answers
+  parts_len <- data[[col_labs]] %>% stringr::str_count(regex) %>% unique() %>% max(na.rm = T)
+  
+  data_split_cols <- data %>%
+    # If col has dashed -> NA
+    dplyr::mutate(!!col := dplyr::na_if(!!col, "-")) %>% 
+    # Remove all "part"
+    dplyr::mutate(!!col := stringr::str_remove_all(!!col, regex)) %>%
+    # Separate to cols
+   tidyr::separate(!!col, into = paste0(col_labs, part_glue, seq_len(parts_len)), sep = "; ")
+
+  out <- switch (split_type,
+    "cols" = { data_split_cols },
+    "rows" = {
+    col_nm <- paste0(col_labs, "_parts")
+    data_split_cols %>%
+      tidyr::pivot_longer(cols = tidyselect::starts_with(paste0(col_labs, part_glue)),
+                   names_to = col_nm,
+                   names_prefix = paste0(col_labs, part_glue),
+                   values_to = paste0(col_labs,"_answers"))
+    }
+  )
+  
+  out
+  
+}
+
+split_cloze_col(cloze_cols_df, "Response_2", split_type = "c") 
+
+tech_resp_df1_raw %>% split_cloze_col("Response 2")
+```
+
+```{r}
+cloze_cols_df %>% 
+  select(Response_2) %>% 
+  split_cloze_col(Response_2)
+```
+
+
+
+
+```{r}
+cloze_regex <- "part [:digit:]+:"
+```
+
+
+Separate to columns
+
+```{r}
+cloze_cols_df %>% 
+  mutate(Response_2 = str_remove_all(Response_2, cloze_regex)) %>% 
+  separate(col = Response_2,into = paste0("Part", 1:12), sep = "; ")
+```
+
+
+
+Separate to Rows: use `separate_rows` Not Good
+
+```{r}
+cloze_cols_df %>% 
+  mutate(Response_2 = str_remove_all(Response_2, cloze_regex)) %>% 
+  separate_rows(Response_2, sep = "; ")
+```
+
+

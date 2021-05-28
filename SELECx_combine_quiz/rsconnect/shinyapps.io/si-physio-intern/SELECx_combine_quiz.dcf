@@ -1,0 +1,12 @@
+name: SELECx_combine_quiz
+title: SELECx_combine_quiz
+username:
+account: si-physio-intern
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4187492
+bundleId: 4649867
+url: https://si-physio-intern.shinyapps.io/SELECx_combine_quiz/
+when: 1622189117.28879
+asMultiple: FALSE
+asStatic: FALSE

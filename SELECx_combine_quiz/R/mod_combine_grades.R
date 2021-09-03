@@ -1,10 +1,14 @@
 ### Combine Grades Module
 
 library(shiny)
+library(DT)
 library(dplyr)
 library(purrr)
 
 library(shiny)
+
+# UI ----------------------------------------------------------------------
+
 
 combine_grades_UI <- function(id) {
   ns <- NS(id)
@@ -21,9 +25,11 @@ combine_grades_UI <- function(id) {
       )
     ),
     
-    tags$blockquote(helpText("Combine, filter, and adjust student's score from SELECx.")),
-    h5(helpText("This module receives input from ", tags$a(href="https://docs.moodle.org/311/en/Quiz_reports", "Moodle Grades report"), 
-                " (not Responses report).")),
+    #tags$blockquote(helpText("Combine, filter, and adjust student's score from SELECx.")),
+    h5(helpText("\"Combine, filter, and adjust student's score from SELECx.\"")),
+    br(),
+    helpText("This module receives input from any ", tags$a(href="https://docs.moodle.org/311/en/Quiz_reports", "Moodle Quiz report"), 
+                " that have all numeric grades for every students (no essay questions)."),
     
     h3("Guides"),
     helpText("Get more details: ",
@@ -32,19 +38,23 @@ combine_grades_UI <- function(id) {
     
     fluidRow(
       column(7,
-             helpText("1) ","Download Moodle Grades report from SELECx."),
+             helpText("1) ","Download Moodle Quiz report from SELECx."),
              helpText("2) ", "Rename that file(s) to English, short name is preferred."),
              helpText("3) ", "Upload file (multiple accepted)"),
              # Upload --------------------------------------------------------------------
-             read_UI(ns("file"), buttonLabel = "Upload Reports", multiple = T),
+             br(),
+             read_UI(ns("file"), buttonLabel = "Upload Reports", width = validateCssUnit("fit-content"), multiple = T),
              htmlOutput(ns("validate_msg")),
              
              helpText("4) ", "Upload ID file that has column \"Name\" for student's names and \"ID\" for student's id numbers."),
+             br(),
              fileInput(ns("file_id"), NULL, accept = c(".csv", ".xls",".xlsx"),buttonLabel = "Upload ID",
                        placeholder = "choose file .csv or .xlsx"),
              
              ),
       column(5,
+             # Extract ID from ---------------------------------------------------------
+             extract_id_col_UI(ns("extract_id_col")),
              grades_type_select_UI(ns("grades_type")),
              adj_max_grades_UI(ns("adj_grades")),
              select_id_cols_UI(ns("choose_cols")),
@@ -56,17 +66,21 @@ combine_grades_UI <- function(id) {
 
     hr(),
     h3("Combined Grades"),
-    dataTableOutput(ns("table")),
+    DT::DTOutput(ns("table")),
     
     hr(),
     h3("Missing Names"),
-    dataTableOutput(ns("table_miss")),
+    DT::DTOutput(ns("table_miss")),
     
     
     #verbatimTextOutput(ns("raw"))
     
   )
 }
+
+
+# Server ------------------------------------------------------------------
+
 
 combine_grades_Server <- function(id) {
   moduleServer(
@@ -76,54 +90,96 @@ combine_grades_Server <- function(id) {
       # Read Report  --------------------------------------------------------------------
       
       data_input <- read_Server("file", warning = T, multiple = T, 
-                                warning_react = not_all_grades_report)
+                                warning_react = not_valid_data)
       
-      data_raw <- reactive({ data_input()$data })
+      data_pre <- reactive({ data_input()$data })
       file_name <- reactive({ data_input()$file_name })
       
       # Validate Responses Report ----------------------------------------------------------------
       
+      ### Check if Every element is Moodle Quiz report
       
-      ### Check if Every element is Moodle Responses report
-      
-      is_all_grades_report <- reactive({
+      is_all_report <- reactive({
         
-        data_raw() %>% purrr::every(is_grades_report)
+        data_pre() %>% purrr::every(is_report)
+        
+      })
+      
+      ### Check if "Grade" column is presented
+      
+      has_grade_col <- reactive({
+        
+        data_pre() %>% purrr::every(~is_regex_in_names(.x, "Grade"))
         
       })
       
-      not_all_grades_report <- reactive({ !is_all_grades_report() })
+      ### Check if Some element has "Not yet graded" in "Grade" column
       
-      ### Check if Any element is Moodle Grades report
-      
-      is_any_resp_report <- reactive({
+      is_some_nyg_presented <- reactive({
         
-        data_raw() %>% purrr::every(is_responses_report)
+        # If it's has "Grade" column; check if TRUE
+        if( isTruthy(has_grade_col()) ){
+          
+          data_pre() %>% purrr::some(is_some_grade_nyg)
+          
+        }else{ FALSE }  
         
       })
+      
+      ### Valid Data if All report is Moodle Quiz, has "Grade" column, and No "Not yet graded" 
+      is_valid_data <- reactive({
+        
+       all( is_all_report(), has_grade_col(), !is_some_nyg_presented() )
+        
+      })
+      not_valid_data <- reactive({  !is_valid_data()  })
+      
       
       ### Error Msg
       output$validate_msg <- renderText({
         
-        # If "Responses" report 
-        if(is_any_resp_report()){
-          
-          HTML("<p style='color:#b30000;'>",
-               "Moodle Responses report(s) is/are founded. All file(s) must be ", 
-               "<a href='https://docs.moodle.org/311/en/Quiz_reports'>Moodle Grades report</a>",
-               "</p>")
-        # If other report
-        }else if(not_all_grades_report()){
-          
-          HTML("<p style='color:#b30000;'>",
+          ## Not a Moodle Quiz
+        if(!is_all_report()){
+         
+           HTML("<p style='color:#b30000;'>",
                "All file(s) must be ", 
-               "<a href='https://docs.moodle.org/311/en/Quiz_reports'>Moodle Grades report</a>",
+               "<a href='https://docs.moodle.org/311/en/Quiz_reports'>Moodle Quiz report</a>",
                "</p>")
+        
+          ## No "Grade" column
+        }else if( !has_grade_col()){
+          
+          HTML("<p style='color:#b30000;'>",
+               "All file(s) must have \"Grade\" column",
+               "</p>")
+          
+          ## Some "Not yet graded"
+        }else if( is_some_nyg_presented()){
+          
+          HTML("<p style='color:#b30000;'>",
+               "\"Grade\" column must not contain \"Not yet graded\".", 
+               "</p>",
+               
+               "<p style='color:#0000b3;'>",
+               "(All students must have a numeric grades. Essay questions are not allowed.)",
+               "</p>"
+          )
+          
         }
+       
         
       })
       
 
+     # Data Validated ----------------------------------------------------------
+
+      
+      data_raw <- reactive({
+        
+        req( isTruthy(is_valid_data()) )
+        data_pre()
+        
+      })
       
       
       # Read ID file ------------------------------------------------------------
@@ -162,6 +218,9 @@ combine_grades_Server <- function(id) {
       
       # Process -----------------------------------------------------------------
       
+      ### Extract ID from which column
+      
+      id_col <- extract_id_col_Server("extract_id_col")
       
       ### Filter Grades Server
       choose_gt <- grades_type_select_Server("grades_type")
@@ -173,9 +232,10 @@ combine_grades_Server <- function(id) {
       ### Compute
       data_processed <- reactive({
         
-        req(is_all_grades_report())
+        req(is_valid_data())
         
         moodleQuiz::combine_grades(data_raw(),
+                                   extract_id_from = id_col(),
                                    id_regex = "[:digit:]+",
                                    new_max_grade = new_max_grade(),
                                    round_digits = 3,
@@ -223,17 +283,19 @@ combine_grades_Server <- function(id) {
 
       # Show Table --------------------------------------------------------------
 
-      output$table <- renderDataTable({
+      output$table <- DT::renderDT({
         
         data_joined()
         
-      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ))
+      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), 
+      selection = 'none',
+      filter = "top")
       
-      output$table_miss <- renderDataTable({
+      output$table_miss <- DT::renderDT({
         
         data_missing()
         
-      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ))
+      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), selection = 'none')
       
       
       # output$raw <- renderPrint({
@@ -245,8 +307,8 @@ combine_grades_Server <- function(id) {
       # Download ----------------------------------------------------------------
       
       download_xlsx_Server("download", 
-                           list(Grades = data_joined(),                               
-                                Missing = data_missing()), 
+                           list("Combine Grades" = data_joined(),                               
+                                "Missing Names" = data_missing()), 
                            filename = "Combined_Grades.xlsx")
   
   

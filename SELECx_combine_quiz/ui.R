@@ -1,5 +1,7 @@
 ### App: Combine Moodle Quiz Report
 library(shiny)
+library(DT)
+library(bslib)
 library(readr)
 library(dplyr)
 library(purrr)
@@ -9,8 +11,13 @@ library(moodleQuiz)
 
 
 ui <- navbarPage("SELECx Combine Quiz", inverse = F,
-                 theme = shinythemes::shinytheme("cerulean"),
+                 #theme = shinythemes::shinytheme("cerulean"),
                  #theme = shinythemes::themeSelector(),
+                 theme = bslib::bs_theme(bootswatch = "cerulean", 
+                                         "enable-gradients" = TRUE, "enable-shadows" = TRUE,
+                                         primary = "#277CBC",
+                                         secondary = "#E14D77",
+                                         info = "#73036E"),    
                  
                  tabPanel("Check Submission",
                           
@@ -25,6 +32,16 @@ ui <- navbarPage("SELECx Combine Quiz", inverse = F,
                  tabPanel("Combine Grades",
                           
                           combine_grades_UI("combine_grades")
+                          ),
+                 
+                 tabPanel("List Files",
+                          
+                          list_files_UI("list_files")
+                          ),
+                 
+                 tabPanel("About",
+                          
+                          includeMarkdown("about.md")
                           )
     
   

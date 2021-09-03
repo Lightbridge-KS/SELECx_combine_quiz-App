@@ -1,6 +1,7 @@
 ### Combine Responses Module
 
 library(shiny)
+library(DT)
 library(dplyr)
 library(purrr)
 
@@ -22,9 +23,11 @@ combine_resp_UI <- function(id) {
              )
     ),
 
-    tags$blockquote(helpText("Combine & Count student's responses from SELECx.")),
-    h5(helpText("This module receives input from ", tags$a(href="https://docs.moodle.org/311/en/Quiz_reports", "Moodle Responses report"), 
-                " (not Grades report).")),
+    #tags$blockquote(helpText("Combine & Count student's responses from SELECx.")),
+    h5(helpText("\"Combine & Count student's responses from SELECx.\"")),
+    br(),
+    helpText("This module receives input from ", tags$a(href="https://docs.moodle.org/311/en/Quiz_reports", "Moodle Responses report"), 
+                " (not Grades report)."),
     
     h3("Guides"),
     helpText("Get more details: ",
@@ -32,33 +35,47 @@ combine_resp_UI <- function(id) {
     ),
     helpText("1) ","Download Moodle Responses report from SELECx."),
     helpText("2) ", "Rename that file(s) to English, short name is preferred."),
-    helpText("3) ", "Upload file (multiple accepted)"),
+
     
-    # Upload --------------------------------------------------------------------
-    
-    read_UI(ns("file"), buttonLabel = "Upload Reports", multiple = T),
-    htmlOutput(ns("validate_msg")),
+    # Upload Report --------------------------------------------------------------------
+    br(),
+    fluidRow(
+      column(6,
+             helpText("3) ", "Upload file (multiple accepted)"),
+             br(),
+             read_UI(ns("file"), buttonLabel = "Upload Reports", width = validateCssUnit("fit-content"), multiple = T),
+             htmlOutput(ns("validate_msg")),
+             ),
+      column(6,
+             # Extract ID from ---------------------------------------------------------
+             br(),
+             extract_id_col_UI(ns("extract_id_col"))
+             )
+    ),
+
     
     helpText("4) ", "Upload ID file that has column \"Name\" for student's names and \"ID\" for student's id numbers."),
+    br(),
     fileInput(ns("file_id"), NULL, accept = c(".csv", ".xls",".xlsx"),buttonLabel = "Upload ID",
               placeholder = "choose file .csv or .xlsx"),
     select_id_cols_UI(ns("choose_cols")),
     
     uiOutput(ns("split_cloze_checkbox")),
+
     
     hr(),
     h3("Combine Responses"),
-    dataTableOutput(ns("table")),
+    DT::DTOutput(ns("table")),
     
     hr(),
     h3("Count Responses"),
     helpText("This table counts how many responses that student answered from each quiz."),
     helpText("Blanked or dashed ( `-` ) responses will not be counted."),
-    dataTableOutput(ns("table_counted")),
+    DT::DTOutput(ns("table_counted")),
     
     hr(),
     h3("Missing Names"),
-    dataTableOutput(ns("table_miss")),
+    DT::DTOutput(ns("table_miss")),
     
     verbatimTextOutput(ns("raw"))
   )
@@ -159,6 +176,10 @@ combine_resp_Server <- function(id) {
       
       # Process -----------------------------------------------------------------
       
+      ### Extract ID from which column
+      
+      id_col <- extract_id_col_Server("extract_id_col")
+      
       ### Check box to Split Cloze (if any)
       output$split_cloze_checkbox <- renderUI({
 
@@ -173,6 +194,7 @@ combine_resp_Server <- function(id) {
         req(is_all_resp_report())
         
         moodleQuiz::combine_resp(data_raw(),
+                                 extract_id_from = id_col(),
                                  id_regex = "[:digit:]+",
                                  choose_encode = "max",
                                  choose_time = "first",
@@ -193,6 +215,7 @@ combine_resp_Server <- function(id) {
         req(is_all_resp_report())
         
           moodleQuiz::count_resp(data_raw(),
+                                 extract_id_from = id_col(),
                                  id_regex = "[:digit:]+",
                                  choose_encode = "max",
                                  choose_time = "first",
@@ -264,31 +287,35 @@ combine_resp_Server <- function(id) {
       
       # Show Table --------------------------------------------------------------
       
-      output$table <- renderDataTable({
+      output$table <- DT::renderDT({
         
         data_processed_joined()
         
-      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ))
+      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), 
+      selection = 'none',
+      filter = "top")
       
       
-      output$table_counted <- renderDataTable({
+      output$table_counted <- DT::renderDT({
         
         data_counted_joined()
         
-      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ))
+      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), 
+      selection = 'none',
+      filter = "top")
       
-      output$table_miss <- renderDataTable({
+      output$table_miss <- DT::renderDT({
         
         data_processed_missing()
         
-      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ))
+      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), selection = 'none')
       
       # Download ----------------------------------------------------------------
       
       download_xlsx_Server("download", 
-                           list(Responses = data_processed_joined(), 
-                                Count = data_counted_joined(),
-                                Missing = data_processed_missing()), 
+                           list("Combine Responses" = data_processed_joined(), 
+                                "Count Responses" = data_counted_joined(),
+                                "Missing Names" = data_processed_missing()), 
                            filename = "Combined_Responses.xlsx")
       
       

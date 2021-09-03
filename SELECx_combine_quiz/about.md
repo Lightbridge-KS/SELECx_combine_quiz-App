@@ -1,0 +1,36 @@
+About
+================
+
+This web application processes, combines, and validates student quiz
+report from [SELECx](http://selecx.si.mahidol.ac.th) (Siriraj E-Learning
+and Education Community).
+
+The details in Thai languages can be found
+[here](https://docs.google.com/document/d/1F4Sbdz6TAYDq9YloOJOFm4eht5524166LGGfW_5GRGU/edit?usp=sharing).
+
+## Programming
+
+-   This web application was built using [R programming
+    language](https://cran.r-project.org) version 4.1.0
+
+-   Web framework was built using R [Shiny
+    package](https://shiny.rstudio.com).
+
+-   Moodle quiz report was processed using R package
+    [moodleQuiz](https://github.com/Lightbridge-AI/moodleQuiz) by its 4
+    main functions:
+
+    -   **Check Submission:** `check_sub()`
+
+    -   **Combine Responses:** `combine_resp()` and `count_resp()`
+
+    -   **Combine Grades:** `combine_grades()`
+
+-   Other data manipulation was performed using R meta-packages:
+    [tidyverse](https://www.tidyverse.org).
+
+## Developer
+
+-   **Author & Maintainer:** Kittipos Sirivongrungson, MD
+
+-   **Contact:** [kittipos.sir@mahidol.edu](kittipos.sir@mahidol.edu)

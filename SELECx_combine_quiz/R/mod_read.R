@@ -43,16 +43,18 @@ read_multi <- function(file_name,file_path){
 # UI - read ---------------------------------------------------------------
 
 read_UI <- function(id, 
+                    multiple = F,
+                    width = NULL,
                     buttonLabel = "Upload file", 
-                    placeholder = "choose file .csv or .xlsx", 
-                    multiple = F) {
+                    placeholder = "choose file .csv or .xlsx"
+                    ) {
   ns <- NS(id)
   
   tagList(
     shinyFeedback::useShinyFeedback(),
     fileInput(ns("file"), NULL, accept = c(".csv", ".xls",".xlsx"), 
               buttonLabel = buttonLabel,
-              placeholder = placeholder, multiple = multiple)
+              placeholder = placeholder, multiple = multiple, width = width)
     
   )
 }

@@ -1,6 +1,7 @@
 ### Check Submission Module
 
 library(shiny)
+library(DT)
 library(dplyr)
 library(purrr)
 
@@ -26,8 +27,10 @@ check_sub_UI <- function(id) {
                      )
             ),
             
-            tags$blockquote(helpText("Check student's submission from SELECx by \"State\" column (i.e., Finished vs In progress).")),
-            h5(helpText("This module receives input from any ", tags$a(href="https://docs.moodle.org/311/en/Quiz_reports", "Moodle Quiz report"))),
+            #tags$blockquote(helpText("Check student's submission from SELECx by \"State\" column (i.e., Finished vs In progress).")),
+            h5(helpText("\"Check student's submission from SELECx by \"State\" column (i.e., Finished vs In progress).\"")),
+            br(),
+            helpText("This module receives input from any ", tags$a(href="https://docs.moodle.org/311/en/Quiz_reports", "Moodle Quiz report")),
             
             h3("Guides"),
             helpText("Get more details: ",
@@ -35,32 +38,49 @@ check_sub_UI <- function(id) {
             ),
             helpText("1) ","Download Moodle Quiz report, i.e. Grades or Responses file(s), from SELECx."),
             helpText("2) ", "Rename that file(s) to English, short name is preferred."),
-            helpText("3) ", "Upload file (multiple accepted)"),
+
            
-             # Upload --------------------------------------------------------------------
-         
-            read_UI(ns("file"), buttonLabel = "Upload Reports", multiple = T),
-            htmlOutput(ns("validate_msg")),
+            # Upload Report --------------------------------------------------------------------
+            br(),
+            fluidRow(
+              column(6,
+                     helpText("3) ", "Upload file (multiple accepted)"),
+                     br(),
+                     read_UI(ns("file"), buttonLabel = "Upload Reports", width = validateCssUnit("fit-content"), multiple = T),
+                     htmlOutput(ns("validate_msg")),
+                     ),
+              column(6,
+                     # Extract ID from ---------------------------------------------------------
+                     br(),
+                     extract_id_col_UI(ns("extract_id_col")),
+                     )
+            ),
             
-      
+
+            # Upload File ID ----------------------------------------------------------
+            
             helpText("4) ", "Upload ID file that has column \"Name\" for student's names and \"ID\" for student's id numbers."),
+            br(),
             fileInput(ns("file_id"), NULL, accept = c(".csv", ".xls",".xlsx"),buttonLabel = "Upload ID",
                       placeholder = "choose file .csv or .xlsx"),
   
             select_id_cols_UI(ns("choose_cols")),
+
+
+
      
 
  
     hr(),
    
-    h3("Data"),
+    h3("Check Submission"),
     helpText("State encoding: \"Finished\" = 1, \"In progress\" = 0"),
     br(),
-    dataTableOutput(ns("table")),
+    DT::DTOutput(ns("table")),
    
     hr(),
     h3("Missing Names"),
-    dataTableOutput(ns("table_miss")),
+    DT::DTOutput(ns("table_miss")),
     
     verbatimTextOutput(ns("raw")),
     verbatimTextOutput(ns("raw2"))
@@ -146,10 +166,15 @@ check_sub_Server <- function(id) {
 
       # Process -----------------------------------------------------------------
       
+      ## Extract ID from which column
+      
+      id_col <- extract_id_col_Server("extract_id_col")
+      
       data_processed <- reactive({
         
         req(is_all_report())
         moodleQuiz::check_sub(data_raw(), 
+                              extract_id_from = id_col(),
                               id_regex = "[:digit:]+",
                               choose_encode = "max",
                               choose_time = "first"
@@ -195,32 +220,34 @@ check_sub_Server <- function(id) {
 
       # Show Table --------------------------------------------------------------
 
-      output$table <- renderDataTable({
+      output$table <- DT::renderDT({
         
         data_joined()
         
-      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ))
+      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), 
+      selection = 'none',
+      filter = "top")
       
       
-      output$table_miss <- renderDataTable({
+      output$table_miss <- DT::renderDT({
         
         data_missing()
         
-      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ))
+      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), 
+      selection = 'none')
     
       
-
       # Download ----------------------------------------------------------------
       
       download_xlsx_Server("download", 
-                           list(Data = data_joined(), Missing = data_missing()), 
+                           list("Check Submission" = data_joined(), "Missing Names" = data_missing()), 
                            filename = "Check_Submission.xlsx")
 
       
       # output$raw <- renderPrint({
-      #   
-      #   list( is_all_report() && is_valid_id() ) 
-      #   
+      # 
+      #   id_col()
+      # 
       # })
       # 
       # 

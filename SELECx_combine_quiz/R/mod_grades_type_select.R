@@ -8,6 +8,7 @@ library(dplyr)
 
 score_filt_table <- c("Maximum score of each student" = c("max_first"),
                       "Minimum score of each student" = c("min_first"),
+                      "Mean score of each student" = c("mean_first"),
                       "First attempt of each student" = c("all_first"),
                       "Last attempt of each student" = c("all_last"),
                       "Every attempts of each student" = c("all_all")

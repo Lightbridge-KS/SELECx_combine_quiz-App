@@ -224,6 +224,26 @@ pre code {
 <p>DF -&gt; return DF list of DF -&gt; set to ls_df class -&gt; return list of DF otherwise -&gt; Error msg</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudHJpYWdlX2xzX2RmIDwtIGZ1bmN0aW9uKHgpIHtcbiAgXG4gICMgSWYgaXQncyBhIGRhdGEgZnJhbWU6IHJldHVybiBpbnB1dFxuICBpZihpcy5kYXRhLmZyYW1lKHgpKSByZXR1cm4oeClcbiAgIyBJZiBhbHJlYWR5IFwibHNfZGZcIiBjbGFzczogcmV0dXJuIGlucHV0XG4gIGlmKGluaGVyaXRzKHgsIFwibHNfZGZcIikpIHJldHVybih4KVxuICAjIElmIGl0J3MgYSBsaXN0IG9mIGRhdGEgZnJhbWU7IHNldCBjbGFzcyB0byBsc19kZiB0aGVuIHJldHVyblxuICBpZihpc19saXN0X2RhdGEuZnJhbWUoeCkpe1xuICAgIHhfbHNfZGYgPC0gbmV3X2xzX2RmKHgpXG4gICAgcmV0dXJuKHhfbHNfZGYpXG4gIH1lbHNle1xuICAjIE90aGVyd2lzZSwgRXJyb3IgTVNHICBcbiAgICB4X2xhYnMgPC0gcmxhbmc6OmFzX2xhYmVsKHJsYW5nOjplbmV4cHIoeCkpXG4gICAgc3RvcCh4X2xhYnMsIFwiIG11c3QgYmUgZGF0YS5mcmFtZSBvciBsaXN0IG9mIGRhdGEuZnJhbWVcIiwgY2FsbC4gPSBGKVxuICB9XG59XG5cbnRyaWFnZV9sc19kZih0ZWNoX2dyYWRfZGYyX3JhdylcbmBgYCJ9 -->
+<pre class="r"><code>triage_ls_df &lt;- function(x) {
+  
+  # If it&#39;s a data frame: return input
+  if(is.data.frame(x)) return(x)
+  # If already &quot;ls_df&quot; class: return input
+  if(inherits(x, &quot;ls_df&quot;)) return(x)
+  # If it&#39;s a list of data frame; set class to ls_df then return
+  if(is_list_data.frame(x)){
+    x_ls_df &lt;- new_ls_df(x)
+    return(x_ls_df)
+  }else{
+  # Otherwise, Error MSG  
+    x_labs &lt;- rlang::as_label(rlang::enexpr(x))
+    stop(x_labs, &quot; must be data.frame or list of data.frame&quot;, call. = F)
+  }
+}
+
+triage_ls_df(tech_grad_df2_raw)</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbInNwZWNfdGJsX2RmIiwidGJsX2RmIiwidGJsIiwiZGF0YS5mcmFtZSJdLCJucm93IjoyNywibmNvbCI6MTgsInN1bW1hcnkiOnsiQSB0aWJibGUiOlsiMjcgeCAxOCJdfX0sInJkZiI6Ikg0c0lBQUFBQUFBQUErMVpYV3dVVlJTZUZsYnNRaW1wTGo5cFVnWTBFVW5ZenMvTy9pV2tOV0xSQjZJSUpqeVFrS0U3MEEzYjNUbzc5UWRmV3BUUU5DaVkwa0RSMU5LMUFkcGd4TlE0ZmZWWkU5OThIUkkxTWZyQUN5WStpTjU3WnU3TTNMdXpkeWtTSk1RTnUzZm1mT2YzTytkTXQvVDFQWWZVK0tHNElBaXJoTlZDVEZnVlE1ZEM3STJEL2J1eWdyQzZGZDIwSUtBTm4rOGdwYWZRUlNkNmIwRHZMa0VZeFVDWFl5ODY5cHhqTHpuMnRHTmZjZXl2SFh2ZXNiOXk3RmxQcGRPeEZ4ejdLbEc1Nk5nMUgxays1ZGczSEh1QzRCTWVzaGtwT2ZaTng1NENHd1NlY2V4cnp2SlpEKzkyN0V1Z1VvT1lDL0I1bVZnc0JaR3ZRQ3BqY0RHSmtndjhqNE8ybTlDWDJEbjJSZkFFaUc5QTJGT3MyNTBRMENZNWo0SDlKM0JSdzFHV3o4STFVcGdQd2wwR3dSUld3VVVqQjdNb3RZREZjRG8xY0ZHREJDNTRLaDBrM0VXZ20xaHU4ek1uTE15Q296RVM2MnlRd2dKb0xlSjBjUW9UVkZGZGdIK0RFMTBlZGV4UG5lVnhvTzVDUUVvM1ZGbURjaGNBUk9uT0FFZlhnMEFKY1A0Qk9LL3JXeUtVcnNzSVRmb0VJRE5ReUJud01oLzA4alBTRVFRdUI4aE9TSGdNTE9mQTRSUVFOVU80dnVGeWpaTDJ1VngrSDBwWUJIRXRvTWhQcmtaWXZCNXd2UmxjMmNETU5MZ1lwL2g1RG1KT2c4OFowaXZpSldvb2NONHVvMHZoMW5zNzEvSHFXNGFwbDBxaWpzL2pCck41bTcwSzNabkQxemVCdjFyQTVoaXpka0VwblFUNUdENm4yRkZjb3ZZUDUzNkJNcjRFNElld0hNajVXSkRUSkNEbmlmMFZhczRUa09jODhEaEhIZ3R6UVdSM0pLNUZVT0tybkNjSnU1dm5EdUZVb0xJT2pNZXBiVStRclpnRWgwc1VGUWs2Wnh1TVF5MTNMUmZnWDQzMHRoWnM1UVR3Z01RZlVReE51czh6MXFDTE9MeEl2TTM2VHczcWVXbVRvWjJoV3VxMmZJWTRud2hpZHBDSElkMVB2eVhuY0lXNGs5UHMwdmtWWG9KKzNBeEdOQUh6dVFUTmNnc0tqY0U2OG1nT1pkZ05NKzArSEs1Q3AvMHRvaXYwUjNPQmFvYTdna3ZzQUdCY2FQc2J2ZENKZjJCMWphS1BoL1grajJKdXdERzlaOEdta2JTaXlKS1NQZEkzcEE4V0M1VlNVaDlJV29NTXJQSmhtUStuK0hDYUMwdjgyRklUYTM1c2laKzVsT1BER1g1aEd0K2F6N25NejF6bTF5MDNjUzd4NFNhRjhhMGxoZSs4Q2FsODFoUithaksvb1hLVFFhN0xQSGc2aExmbXlmNWl1VmdkTkFyLzN6OWk5OUg5MnFKa3hYN2pxRG1pbSsrS0NucGVpV0lxbjlMRTEvWjVDZ2xWM0tlYkE0TWVtTXZMMlJDWW9rQXRMOHNCdURGTmdiS1MxOUloMHh5RklqQnNLa3NNS2lrOE5KVnFqR2J5bXRRWXpWSkpzV2d1TDNFODUvSnFpSXRORENyTEZMd1JVVU56cFhEUWRGN1dHcVBaZkVwcWpPYnlpaFJPaTBabEtTOW53ckRDZGtuS2lpODBoRkZSY2dCdlpPRzhSaFdsTUgxU05CNnFaUnFqYWFZVExLcElqZEVNTXg4S1E2WUVjVmV3SCtGUnJkc1BKY1haRDBVTmdjeCs1Q1dWdHg0WjNnTEluQkZIdHB3aFJ1VnpGaTlISlZXUGh2ZTliZ0drWnZ1Unl2RDJRK1dnYVlySmlQM2c3QlpxVVpxN0grRU9SdXlIbk9idlI2cnhmaWplckRWQ1ZiVXhxdWFsTkhjL2NqeFVsWG43b1hIMk1wdVgxY2I3c1Q0dERoWExWUkdSVWpVR3FveFVsY0xTRGtRMWlGTzVzTGc5NDBxelVSNVFNbUdwcDRwK1FGRitwYWdrZkRIcVo0Um5KVEpqT3JVblpIR3dNbUlTbmF4blNWVkZwRm91U3NyRTl2TFhJbU5IMTRwbUlrSXFVd3lzVjZPaXRlZWlpQ1VweUpUVVUwVTdGNVpxVVNuNHZES1prZTVHVDRJWExwaWk5WGlLK3JiZnJ2MFkzLzFtM3pNbmIrMzk0dW4zL1B0bkJYalZuZHRQbk82MjkvL2VYSS8xNjlteDkwUi8yeS9IOEt0djY3bkRPKzU4ZTY3T0Qzc1MvYnA0VzZiUjZ6S3ByL2NITEI3K3ZQZFhGUFhrclpmcjdodWR6ZlFZWFBCZURlM3ZOVzZ6OHllWHY3cjZIclBUbjg5V05BeUhkL3h4ejZkd0M0aGFzVjJUcy9ldllaZ3ZjamJWdjRPbSs3ZlRXK3Z4M2VEQXI0L2tlNDluNzUvdUhLelU3dC82Si9MbThmSDJIbjcrZnV0N1lIV1FQajF3LzkvaDEvY1BhLy84NThwRDJ6OFNrZnFXc1ZwT1NocTVscEtaWEpUOFViaGVZVzR0dTZLZGFPcjlKeERZU3NtYzVnL0tiWGR3SHJlVCthTnByS3dQR1ZWdmVqbzk0Wm9ESXlhV2U3ZngvcUpadGNTUVpPMHI1YXBWdEVhc1lxVk1sUFlZdzdwcERSbGxpM3liZW1sSUw1WkV2VkF3alNyNWVoTTdZT21XN3hqZG1KWlJFSDB2YlM5V2hvWkxodVgvZDB6OFlISElFQzM5aEVGVTF1NDE5WUxSSTB0SlNTSksrNU9pTFBhRVpnbExGQ3hSMGlHSkt2WW9TVFVUa3FTd1JKWkRFcTFPa3E3emt4RjdRaU9FSlZsUFFwUGJabGJlVGhLQzI5RzdkUlI5b0c5elA3TmRHQ2pwVmRJRklvd1hkRXRQSGpNeDdZSndsekZaVXhuRzdDT2pWdnczN3hoajNHSXlnbldXV2RTUEcwZEsxU09GWTRMNzE0SVc3OG5SN2wxM2hhNDczWGl0NVBlWEdQbUdiNVNQRjh1a2c3R1NmdFFva2ErdXFGeW9OamxzRnYweGlDTnBOV2xWTEozb3hRY3FKU0tCd29TNy93QmZQM1YrNXg4QUFBPT0ifQ== -->
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
@@ -231,6 +251,9 @@ pre code {
   </script>
 </div>
 <!-- rnb-frame-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudHJpYWdlX2xzX2RmKHRlY2hfZ3JhZF9sc19yYXcpIFxuYGBgIn0= -->
+<pre class="r"><code>triage_ls_df(tech_grad_ls_raw) </code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-output-begin eyJkYXRhIjoiJFRlY2hub18yX2dyYWRlX251bVxuIn0= -->
 <pre><code>$Techno_2_grade_num</code></pre>
 <!-- rnb-output-end -->
@@ -268,6 +291,9 @@ $Techno_4_grade_num</code></pre>
 attr(,&quot;class&quot;)
 [1] &quot;ls_df&quot; &quot;list&quot; </code></pre>
 <!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudHJpYWdlX2xzX2RmKGV4cHIoeHkpKVxuYGBgIn0= -->
+<pre class="r"><code>triage_ls_df(expr(xy))</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-output-begin eyJkYXRhIjoiYHhgIGlzIG5vdCBhIGxpc3RcbkVycm9yOiB4eSBtdXN0IGJlIGRhdGEuZnJhbWUgb3IgbGlzdCBvZiBkYXRhLmZyYW1lXG4ifQ== -->
 <pre><code>`x` is not a list
 Error: xy must be data.frame or list of data.frame</code></pre>
@@ -279,11 +305,28 @@ Error: xy must be data.frame or list of data.frame</code></pre>
 <h2>Class Constructor</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubmV3X2xzX2RmIDwtIGZ1bmN0aW9uKHgpIHtcbiAgXG4gICMgQ2hlY2sgaWYgaXQgaXMgbGlzdCBvZiBkYXRhIGZyYW1lXG4gIGlmKCFpc19saXN0X2RhdGEuZnJhbWUoeCkpIHN0b3AoXCJgeGAgaXMgbm90IGEgbGlzdCBvZiBkYXRhLmZyYW1lXCIsIGNhbGwuID0gRilcbiAgXG4gICMgQXNzaWduIG5ldyBjbGFzczogbHNfZGZcbiAgc3RydWN0dXJlKHgsIGNsYXNzID0gYyhcImxzX2RmXCIsIFwibGlzdFwiKSlcbiAgXG59XG5cbm10X2lyaXMgPC0gbmV3X2xzX2RmKGxpc3QobXRjYXJzID0gbXRjYXJzLGlyaXMgPSBpcmlzKSlcbmBgYCJ9 -->
+<pre class="r"><code>new_ls_df &lt;- function(x) {
+  
+  # Check if it is list of data frame
+  if(!is_list_data.frame(x)) stop(&quot;`x` is not a list of data.frame&quot;, call. = F)
+  
+  # Assign new class: ls_df
+  structure(x, class = c(&quot;ls_df&quot;, &quot;list&quot;))
+  
+}
+
+mt_iris &lt;- new_ls_df(list(mtcars = mtcars,iris = iris))</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>Validate Class</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaW5oZXJpdHMobXRfaXJpcywgXCJsc19kZlwiKVxuXG5gYGAifQ== -->
+<pre class="r"><code>inherits(mt_iris, &quot;ls_df&quot;)
+</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-output-begin eyJkYXRhIjoiWzFdIFRSVUVcbiJ9 -->
 <pre><code>[1] TRUE</code></pre>
 <!-- rnb-output-end -->
@@ -292,6 +335,10 @@ Error: xy must be data.frame or list of data.frame</code></pre>
 <p>This will Error because it’s just a data frame.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubmV3X2xzX2RmKHRlY2hfZ3JhZF9kZjJfcmF3KVxuXG5gYGAifQ== -->
+<pre class="r"><code>new_ls_df(tech_grad_df2_raw)
+</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-output-begin eyJkYXRhIjoiYHhgIGlzIGEgZGF0YSBmcmFtZVxuRXJyb3I6IGB4YCBpcyBub3QgYSBsaXN0IG9mIGRhdGEgZnJhbWVcbiJ9 -->
 <pre><code>`x` is a data frame
 Error: `x` is not a list of data frame</code></pre>
@@ -312,6 +359,32 @@ Error: `x` is not a list of data frame</code></pre>
 <h2>Is it list of Data Frame?</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaXNfbGlzdF9kYXRhLmZyYW1lIDwtIGZ1bmN0aW9uKHgsIHF1aWV0ID0gRkFMU0UpIHtcbiAgXG4gICMgQ2hlY2sgaWYgb3V0ZXIgbGF5ZXIgaXMgZGF0YS5mcmFtZVxuICBpZihpcy5kYXRhLmZyYW1lKHgpKXtcbiAgICBpZighcXVpZXQpIG1lc3NhZ2UoXCJgeGAgaXMgYSBkYXRhLmZyYW1lLCBub3QgYSBsaXN0IG9mIGRhdGEuZnJhbWVcIilcbiAgICByZXR1cm4oIEZBTFNFIClcbiAgfVxuICBcbiAgIyBDaGVjayBpZiBvdXRlciBsYXllciBpcyBsaXN0XG4gIGlzX2xpc3QgPC0gaW5oZXJpdHMoeCwgXCJsaXN0XCIpICMgdGhpcyByZXR1cm4gVFJVRSBpZiBsaXN0LCBvdGhlcndpc2UgRkFMU0UgZXZlbiBpZiBERlxuICBpZighaXNfbGlzdCl7XG4gICAgaWYoIXF1aWV0KSBtZXNzYWdlKFwiYHhgIGlzIG5vdCBhIGxpc3RcIilcbiAgICByZXR1cm4oIGlzX2xpc3QgKVxuICB9XG5cbiAgIyBDaGVjayBpZiBldmVyeSBlbGVtZW50cyBvZiB0aGF0IGxpc3QgaW5oZXJpdCBkYXRhLmZyYW1lIGNsYXNzXG4gIGlzX2VsZW1lbnRfZGYgPC0gYWxsKHB1cnJyOjptYXBfbGdsKHgsIH5pbmhlcml0cygueCwgXCJkYXRhLmZyYW1lXCIpKSlcbiAgaWYoIWlzX2VsZW1lbnRfZGYpe1xuICAgIGlmKCFxdWlldCkgbWVzc2FnZShcImB4YCBpcyBhIGxpc3QgYnV0IGl0cyBlbGVtZW50IGlzIG5vdCBhbGwgZGF0YS5mcmFtZVwiKVxuICAgIHJldHVybiggaXNfZWxlbWVudF9kZiApXG4gIH1cbiAgXG4gIGlzX2xpc3QgJiBpc19lbGVtZW50X2RmXG59XG5gYGAifQ== -->
+<pre class="r"><code>is_list_data.frame &lt;- function(x, quiet = FALSE) {
+  
+  # Check if outer layer is data.frame
+  if(is.data.frame(x)){
+    if(!quiet) message(&quot;`x` is a data.frame, not a list of data.frame&quot;)
+    return( FALSE )
+  }
+  
+  # Check if outer layer is list
+  is_list &lt;- inherits(x, &quot;list&quot;) # this return TRUE if list, otherwise FALSE even if DF
+  if(!is_list){
+    if(!quiet) message(&quot;`x` is not a list&quot;)
+    return( is_list )
+  }
+
+  # Check if every elements of that list inherit data.frame class
+  is_element_df &lt;- all(purrr::map_lgl(x, ~inherits(.x, &quot;data.frame&quot;)))
+  if(!is_element_df){
+    if(!quiet) message(&quot;`x` is a list but its element is not all data.frame&quot;)
+    return( is_element_df )
+  }
+  
+  is_list &amp; is_element_df
+}</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
@@ -319,6 +392,37 @@ Error: `x` is not a list of data frame</code></pre>
 <h2>Is it Named list of Data Frame?</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaXNfbmFtZWRfbGlzdF9kYXRhLmZyYW1lIDwtIGZ1bmN0aW9uKHgsIHF1aWV0ID0gRkFMU0UpIHtcbiAgXG4gICMgQ2hlY2sgaWYgb3V0ZXIgbGF5ZXIgaXMgZGF0YS5mcmFtZVxuICBpZihpcy5kYXRhLmZyYW1lKHgpKXtcbiAgICBpZighcXVpZXQpIG1lc3NhZ2UoXCJgeGAgaXMgYSBkYXRhLmZyYW1lLCBub3QgYSBsaXN0IG9mIGRhdGEuZnJhbWVcIilcbiAgICByZXR1cm4oIEZBTFNFIClcbiAgfVxuICBcbiAgIyBDaGVjayBpZiBvdXRlciBsYXllciBpcyBsaXN0XG4gIGlzX2xpc3QgPC0gaW5oZXJpdHMoeCwgXCJsaXN0XCIpICMgdGhpcyByZXR1cm4gVFJVRSBpZiBsaXN0LCBvdGhlcndpc2UgRkFMU0UgZXZlbiBpZiBERlxuICBpZighaXNfbGlzdCl7XG4gICAgaWYoIXF1aWV0KSBtZXNzYWdlKFwiYHhgIGlzIG5vdCBhIGxpc3RcIilcbiAgICByZXR1cm4oIGlzX2xpc3QgKVxuICB9XG4gICMgQ2hlY2sgaWYgbGlzdCBoYXMgbmFtZXNcbiAgaWYoaXMubnVsbChuYW1lcyh4KSkpe1xuICAgIGlmKCFxdWlldCkgbWVzc2FnZShcImB4YCBpcyBsaXN0IGJ1dCBoYXMgbm8gbmFtZXNcIilcbiAgICByZXR1cm4oIEZBTFNFIClcbiAgfVxuXG4gICMgQ2hlY2sgaWYgZXZlcnkgZWxlbWVudHMgb2YgdGhhdCBsaXN0IGluaGVyaXQgZGF0YS5mcmFtZSBjbGFzc1xuICBpc19lbGVtZW50X2RmIDwtIGFsbChwdXJycjo6bWFwX2xnbCh4LCB+aW5oZXJpdHMoLngsIFwiZGF0YS5mcmFtZVwiKSkpXG4gIGlmKCFpc19lbGVtZW50X2RmKXtcbiAgICBpZighcXVpZXQpIG1lc3NhZ2UoXCJgeGAgaXMgYSBuYW1lZCBsaXN0IGJ1dCBpdHMgZWxlbWVudCBpcyBub3QgYWxsIGRhdGEuZnJhbWVcIilcbiAgICByZXR1cm4oIGlzX2VsZW1lbnRfZGYgKVxuICB9XG4gIFxuICBpc19saXN0ICYgaXNfZWxlbWVudF9kZlxufVxuYGBgIn0= -->
+<pre class="r"><code>is_named_list_data.frame &lt;- function(x, quiet = FALSE) {
+  
+  # Check if outer layer is data.frame
+  if(is.data.frame(x)){
+    if(!quiet) message(&quot;`x` is a data.frame, not a list of data.frame&quot;)
+    return( FALSE )
+  }
+  
+  # Check if outer layer is list
+  is_list &lt;- inherits(x, &quot;list&quot;) # this return TRUE if list, otherwise FALSE even if DF
+  if(!is_list){
+    if(!quiet) message(&quot;`x` is not a list&quot;)
+    return( is_list )
+  }
+  # Check if list has names
+  if(is.null(names(x))){
+    if(!quiet) message(&quot;`x` is list but has no names&quot;)
+    return( FALSE )
+  }
+
+  # Check if every elements of that list inherit data.frame class
+  is_element_df &lt;- all(purrr::map_lgl(x, ~inherits(.x, &quot;data.frame&quot;)))
+  if(!is_element_df){
+    if(!quiet) message(&quot;`x` is a named list but its element is not all data.frame&quot;)
+    return( is_element_df )
+  }
+  
+  is_list &amp; is_element_df
+}</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
@@ -327,6 +431,25 @@ Error: `x` is not a list of data frame</code></pre>
 <h1>Testing: is_named_list_data.frame</h1>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudGVzdF90aGF0KFwiaXNfbmFtZWRfbGlzdF9kYXRhLmZyYW1lIG91dHB1dCBpcyBjb3JyZWN0XCIse1xuICBcbiAgbmwgPC0gbGlzdChtID0gbXRjYXJzLCBtID0gaXJpcylcbiAgbCA8LSBsaXN0KG10Y2FycywgaXJpcylcbiAgZGYgPC0gaXJpc1xuICB2Y3QgPC0gMToxMFxuICAjIFRlc3QgT3V0cHV0XG4gIGV4cGVjdF90cnVlKGlzX25hbWVkX2xpc3RfZGF0YS5mcmFtZShubCkpXG4gIGV4cGVjdF9mYWxzZShpc19uYW1lZF9saXN0X2RhdGEuZnJhbWUobCkpXG4gIGV4cGVjdF9mYWxzZShpc19uYW1lZF9saXN0X2RhdGEuZnJhbWUoZGYpKVxuICBleHBlY3RfZmFsc2UoaXNfbmFtZWRfbGlzdF9kYXRhLmZyYW1lKHZjdCkpXG4gICMgTWVzc2FnZVxuICBleHBlY3RfbWVzc2FnZShpc19uYW1lZF9saXN0X2RhdGEuZnJhbWUobCksIFwiaXMgbGlzdCBidXQgaGFzIG5vIG5hbWVzXCIpXG4gIGV4cGVjdF9tZXNzYWdlKGlzX25hbWVkX2xpc3RfZGF0YS5mcmFtZShkZiksIFwiaXMgYSBkYXRhLmZyYW1lLCBub3QgYSBsaXN0IG9mIGRhdGEuZnJhbWVcIilcbiAgZXhwZWN0X21lc3NhZ2UoaXNfbmFtZWRfbGlzdF9kYXRhLmZyYW1lKHZjdCksIFwiaXMgbm90IGEgbGlzdFwiKVxuICBcbn0pXG5gYGAifQ== -->
+<pre class="r"><code>test_that(&quot;is_named_list_data.frame output is correct&quot;,{
+  
+  nl &lt;- list(m = mtcars, m = iris)
+  l &lt;- list(mtcars, iris)
+  df &lt;- iris
+  vct &lt;- 1:10
+  # Test Output
+  expect_true(is_named_list_data.frame(nl))
+  expect_false(is_named_list_data.frame(l))
+  expect_false(is_named_list_data.frame(df))
+  expect_false(is_named_list_data.frame(vct))
+  # Message
+  expect_message(is_named_list_data.frame(l), &quot;is list but has no names&quot;)
+  expect_message(is_named_list_data.frame(df), &quot;is a data.frame, not a list of data.frame&quot;)
+  expect_message(is_named_list_data.frame(vct), &quot;is not a list&quot;)
+  
+})</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-output-begin eyJkYXRhIjoiVGVzdCBwYXNzZWQg8J+OilxuIn0= -->
 <pre><code>Test passed 🎊</code></pre>
 <!-- rnb-output-end -->
@@ -334,8 +457,12 @@ Error: `x` is not a list of data frame</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-output-begin eyJkYXRhIjoiYHhgIGlzIGxpc3QgYnV0IGhhcyBubyBuYW1lc1xuIn0= -->
-<pre><code>`x` is list but has no names</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaXNfbmFtZWRfbGlzdF9kYXRhLmZyYW1lKDE6MTApXG5cbmBgYCJ9 -->
+<pre class="r"><code>is_named_list_data.frame(1:10)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiYHhgIGlzIG5vdCBhIGxpc3RcbiJ9 -->
+<pre><code>`x` is not a list</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-output-begin eyJkYXRhIjoiWzFdIEZBTFNFXG4ifQ== -->
 <pre><code>[1] FALSE</code></pre>

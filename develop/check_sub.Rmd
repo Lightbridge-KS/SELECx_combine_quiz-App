@@ -19,6 +19,8 @@ check_sub.data.frame
 
 ```{r check_sub}
 check_sub <- function(data,
+                      extract_id_from = c("Email address", 
+                                          "Institution", "Department"),
                       id_regex = ".*", # Extract ID from Email
                       sep_name = " ", # Separate First name and Surname
                       state = c("Finished", "In progress"),  
@@ -36,6 +38,13 @@ check_sub <- function(data,
 
 check_sub(tech_grad_df2_raw)
 check_sub(tech_grad_ls_raw, sep_col = ": ", id_regex = "[:digit:]+")
+
+check_sub(int_nerv_resp)
+check_sub(ncv_po_resp_raw)
+
+check_sub(tm_ncv_gr, extract_id_from = "Institution")
+
+moodleQuiz::check_sub(tech_grad_df2_raw, id_regex = "\\d+")
 ```
 
 Error if it's not moodle report 
@@ -59,6 +68,8 @@ Extra arg = sep_col
 
 ```{r check_sub.list}
 check_sub.list <- function(data,
+                           extract_id_from = c("Email address", 
+                                             "Institution", "Department"),
                            id_regex = ".*", # Extract ID from Email
                            sep_name = " ", # Separate First name and Surname
                            sep_col = "_", # Separation of State and Encode column names
@@ -77,6 +88,7 @@ check_sub.list <- function(data,
   
   data_ls <- data %>% 
     purrr::map(~check_sub.data.frame(.x,
+                                extract_id_from = extract_id_from,
                                  id_regex = id_regex,
                                  sep_name = sep_name,
                                  state = state,
@@ -127,9 +139,12 @@ tech_grad_ls_raw %>%
 
 Raw -> Clean -> Encode
 
+
 ```{r check_sub.data.frame}
 check_sub.data.frame <- function(data,
                                  # Clean
+                                 extract_id_from = c("Email address", 
+                                             "Institution", "Department"),
                                  id_regex = ".*", # Extract ID from Email
                                  sep_name = " ", # Separate First name and Surname
                                  # Encode
@@ -142,7 +157,9 @@ check_sub.data.frame <- function(data,
   if(!is_report(data)) stop("`data` is not a moodle quiz report", call. = F)
     
   data %>% 
-    clean_moodle(extract_id = TRUE, id_regex = id_regex, sep_name = sep_name, 
+    clean_moodle(extract_id = TRUE, 
+                  extract_id_from = extract_id_from,
+                  id_regex = id_regex, sep_name = sep_name, 
                  dash_na = FALSE, force_numeric = FALSE) %>% 
     encode_moodle(state = state, 
                   encode = encode, 
@@ -154,7 +171,10 @@ check_sub.data.frame <- function(data,
 tm_mgrad_raw %>% 
   check_sub.data.frame(encode = c(2, 0), choose_encode = "all", choose_time = "first")
 
+tm_ncv_gr %>% check_sub.data.frame(extract_id_from = "Institution")
 ```
+
+
 
 
 ```{r}

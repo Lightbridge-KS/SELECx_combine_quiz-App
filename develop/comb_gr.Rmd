@@ -15,6 +15,7 @@ combine_grades.list
 combine_grades.data.frame
 
 
+
 # Generic: Combine Grade
 
 
@@ -26,6 +27,8 @@ combine_grades.data.frame
 ```{r combine_grades}
 combine_grades <- function(data,
                            # Clean
+                           extract_id_from = c("Email address", 
+                                           "Institution", "Department"),
                            id_regex = ".*", 
                            sep_name = " ", # Separate First name and Surname
                            # Adjust Grade
@@ -38,7 +41,7 @@ combine_grades <- function(data,
                            choose_grade = c("max", "min", "mean", "all"),
                            choose_time = c("first", "last", "all"),
                            force_grade = F,
-                           ... # passed to `sep_col` of list method
+                           sep_col = "_" # Separation for State and Grade column names
                            ) {
   
   UseMethod("combine_grades")
@@ -47,7 +50,24 @@ combine_grades <- function(data,
 
 combine_grades(tm_mgrad_raw, new_max_grade = 10)
 combine_grades(tech_grad_ls_raw, new_max_grade = c(10,20,30), 
-               sep_col = ":", id_regex = "[:digit:]+")
+               sep_col = ":", id_regex = "[:digit:]+", choose_grade = "mean")
+
+
+moodleQuiz::combine_grades(tech_grad_ls_raw) %>% names()
+moodleQuiz::combine_grades(tech_resp_df2_raw)
+
+moodleQuiz::combine_grades(tm_mgrad_raw, choose_grade = "mean", choose_time = "all")
+```
+
+```{r}
+moodleQuiz::combine_grades(int_nerv_resp)
+combine_grades(ncv_po_resp_raw)
+
+combine_grades(tm_mgrad_raw, choose_grade = "mean")
+
+moodleQuiz:::filter_grades_moodle
+
+moodleQuiz::combine_grades(tm_mgrad_raw, choose_grade = "mean")
 ```
 
 
@@ -57,21 +77,27 @@ combine_grades(tech_grad_ls_raw, new_max_grade = c(10,20,30),
 ```{r combine_grades.list}
 combine_grades.list <- function(data,
                                 # Clean
+                               extract_id_from = c("Email address", 
+                                           "Institution", "Department"),
                                 id_regex = ".*", 
                                 sep_name = " ", # Separate First name and Surname
-                                sep_col = "_", # Separation for State and Grade column names
                                 # Adjust Grade
                                 new_max_grade = NULL,
                                 round_digits = 3, # If NULL = no round
                                 # Filter Grades
                                 choose_grade = c("max", "min", "mean", "all"),
                                 choose_time = c("first", "last", "all"),
-                                force_grade = F
+                                force_grade = F,
+                                sep_col = "_" # Separation for State and Grade column names
+
                                 ) {
   
     if(!is_named_list_data.frame(data)) stop("`data` must be named list of data.frame", call. = F)
   is_data_rep <- purrr::every(data, is_report)
   if(!is_data_rep) stop("Elements of `data` must be Moodle Quiz report",call. = F)
+  
+  has_grade_col <- purrr::every(data, ~is_regex_in_names(.x, "Grade"))
+  if(!has_grade_col) stop("Elements of `data` must have 'Grade' column.", call. = F)
   
   is_nyg_err <- all(!force_grade, purrr::every(data, is_some_grade_nyg))
   if(is_nyg_err) stop("Some students are 'Not yet graded'. If you want to grade anyway, choose `force_grade = TRUE`.", call. = F)
@@ -90,6 +116,7 @@ combine_grades.list <- function(data,
   data_ls <- data %>% 
       purrr::map2(.y = new_max_grade,
         ~combine_grades.data.frame(.x, 
+                                   extract_id_from = extract_id_from,
                                    id_regex = id_regex, 
                                    sep_name = sep_name, 
                                    new_max_grade = .y, 
@@ -118,6 +145,15 @@ tech_grad_ls_raw %>% combine_grades.list(new_max_grade = NULL)
 tech_grad_ls_raw %>% combine_grades.list(new_max_grade = c(1,2,3))
 ```
 
+
+
+
+```{r}
+combine_grades.list(list(a = int_nerv_resp) )
+```
+
+
+
 ### Test: list
 
 ```{r test combine_grades.list}
@@ -131,6 +167,7 @@ test_that("combine_grades.list",{
   
   expect_error(combine_grades.list(iris), "must be named list of data.frame")
   expect_error(combine_grades.list(list(i = iris)), "must be Moodle Quiz report")
+  expect_error(combine_grades.list(list(a = int_nerv_resp) ), "must have 'Grade' column")
   expect_error(combine_grades.list(list(t = tech_nograd_df1)), 
                "'Not yet graded'")
   expect_error(combine_grades.list(tech_grad_ls_raw, new_max_grade = c(10)), 
@@ -147,6 +184,7 @@ Error msg
 ```{r}
 combine_grades.list(iris)
 combine_grades.list(list(i = iris)) 
+combine_grades(tech_nograd_df1, force_grade = T)
 combine_grades.list(list(t = tech_nograd_df1))
 combine_grades.list(list(t = tech_nograd_df1), force_grade = T)
 ```
@@ -185,6 +223,8 @@ choose_time = first, last, all
 ```{r combine_grades.data.frame}
 combine_grades.data.frame <- function(data,
                                       # Clean
+                                      extract_id_from = c("Email address", 
+                                           "Institution", "Department"),
                                       id_regex = ".*", 
                                       sep_name = " ", # Separate First name and Surname
                                       # Adjust Grade
@@ -193,16 +233,21 @@ combine_grades.data.frame <- function(data,
                                       # Filter Grades
                                       choose_grade = c("max", "min", "mean", "all"),
                                       choose_time = c("first", "last", "all"),
-                                      force_grade = F
+                                      force_grade = F,
+                                      ... # absorb sep_col arg
                                       ) {
   
   if(!is_report(data)) stop("`data` is not a Moodle Quiz report.", call. = F)
+  
+  has_grade_col <- is_regex_in_names(data, "Grade")
+  if(!has_grade_col) stop("`data` must has 'Grade' column.", call. = F)
 
   is_nyg_err <- all(!force_grade, is_some_grade_nyg(data))
   if(is_nyg_err) stop("Some students are 'Not yet graded'. If you want to grade anyway, choose `force_grade = TRUE`.", call. = F)
   # Clean
   data %>% 
     clean_moodle(id_regex = id_regex, 
+                 extract_id_from = extract_id_from,
                  sep_name = sep_name, force_numeric = TRUE) %>% 
   # Adjust Grade
     adj_grades_moodle(new_max_grade = new_max_grade, 
@@ -220,6 +265,7 @@ combine_grades.data.frame(tm_mgrad_raw,
 
 combine_grades.data.frame(tech_resp_df2_raw)
 combine_grades.data.frame(tech_grad_df2_raw)
+combine_grades.data.frame(tm_ncv_gr, extract_id_from = "Institution", force_grade = T)
 ```
 
 
@@ -235,6 +281,7 @@ test_that("combine_grades.data.frame",{
   ## Error msg
   combine_grades.data.frame(iris) %>% expect_error("is not a Moodle Quiz report")
   combine_grades.data.frame(tech_nograd_df1) %>% expect_error("'Not yet graded'")
+  combine_grades.data.frame(int_nerv_resp) %>% expect_error("`data` must has 'Grade' column")
   # If Force Grade; override
   expect_s3_class(combine_grades.data.frame(tech_nograd_df1, force_grade = T),
                  "data.frame")
@@ -319,11 +366,22 @@ filter_grades_moodle <- function(data_cleaned,
   # Get Grades Column name
   Grade_col <- stringr::str_subset(names(data_cleaned), "G") %>% rlang::sym()
   
+  # If "mean" compute mean score of each student (only finished attempts)
+  if (choose_grade == "mean") {
+    out <- data_cleaned %>%
+      dplyr::filter(State == "Finished") %>%
+      dplyr::group_by(Name, ID, State) %>%
+      dplyr::summarise(
+        dplyr::across(tidyselect::vars_select_helpers$where(is.numeric), ~ mean(.x, na.rm = T)), .groups = "keep"
+      ) %>%
+      dplyr::ungroup()
+
+    return(out)
+  }
   # Grouped filter by Score of each student
   filt_expr_1 <- switch (choose_grade,
     "max" = { rlang::expr(!!Grade_col == max(!!Grade_col)) },
     "min" = { rlang::expr(!!Grade_col == min(!!Grade_col))},
-    "mean" = { rlang::expr(!!Grade_col == mean(!!Grade_col))},
     "all" = { rlang::expr(!!Grade_col == !!Grade_col)},
     stop("`choose_grade` must be one of 'max', 'min', 'mean', 'all'", call. = F)
   )
@@ -337,9 +395,10 @@ filter_grades_moodle <- function(data_cleaned,
   
   data_cleaned %>%
     dplyr::group_by(Name, ID) %>%
-    dplyr::filter(!!filt_expr_1) %>% 
+    dplyr::filter(!!filt_expr_1) %>%
     dplyr::filter(!!filt_expr_2) %>%
     dplyr::ungroup()
+
   
 }
 

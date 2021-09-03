@@ -18,6 +18,8 @@ combine_resp.data.frame
 ```{r combine_resp}
 combine_resp <- function(data,
                          # Clean
+                         extract_id_from = c("Email address", 
+                                             "Institution", "Department"),
                          id_regex = ".*", # Extract ID from Email
                          sep_name = " ", # Separate First name and Surname
                          # Encode
@@ -28,14 +30,20 @@ combine_resp <- function(data,
                          # Split cloze
                          split_cloze = F, 
                          part_glue = "_part_",
-                         ... # passed to sep_col arg
+                         #... # passed to sep_col arg
+                         sep_col = "_p_"
                          ) {
   
   UseMethod("combine_resp")
 }
 
-tech_resp_df1_raw %>% combine_resp(sep_name = "-", split_cloze = F)
+tech_resp_df1_raw %>% combine_resp(sep_name = "-", split_cloze = F, sep_col = "a")
 tech_resp_ls_raw %>% combine_resp(sep_col = ":")
+
+combine_resp(int_nerv_resp)
+combine_resp(tm_ncv_resp, extract_id_from = "Institution")
+
+moodleQuiz::combine_resp(tech_resp_df1_raw, split_cloze = T)
 ```
 
 
@@ -48,43 +56,47 @@ Extra arg = sep_col
 ```{r combine_resp.list}
 combine_resp.list <- function(data,
                               # Clean
+                              extract_id_from = c("Email address", 
+                                             "Institution", "Department"),
                               id_regex = ".*", # Extract ID from Email
                               sep_name = " ", # Separate First name and Surname
-                              sep_col = "_", # Separation for State and Response column names
                               # Encode
                               state = c("Finished", "In progress"),
                               encode = c(1,0),
                               choose_encode = c("max", "min", "all"),
                               choose_time = c("first", "last", "all"),
                               # Split cloze
-                              split_cloze = F, 
-                              part_glue = "_part_"
-                              ) {
-  
+                              split_cloze = F,
+                              part_glue = "_part_",
+                              # Extra
+                              sep_col = "_" # Separation for State and Response column names
+) {
+
   if(!is_named_list_data.frame(data)) stop("`data` must be named list of data.frame", call. = F)
   is_data_resp_rep <- purrr::every(data, is_responses_report)
   if(!is_data_resp_rep) stop("Elements of `data` must be Moodle Responses report",call. = F)
-  data %>% 
+  data %>%
     purrr::map(~combine_resp.data.frame(.x,
-                                    # Clean
-                                    id_regex = id_regex, # Extract ID from Email
-                                    sep_name = sep_name, # Separate First name and Surname
-                                    # Encode
-                                    state = state,
-                                    encode = encode,
-                                    choose_encode = choose_encode, 
-                                    choose_time = choose_time,
-                                    # Split cloze
-                                    split_cloze = split_cloze, 
-                                    part_glue = part_glue
-                                    )) %>% 
-    purrr::map(~dplyr::select(.x, Name, ID, State, starts_with("R"))) %>% 
+                                        # Clean
+                                        extract_id_from = extract_id_from,
+                                        id_regex = id_regex, # Extract ID from Email
+                                        sep_name = sep_name, # Separate First name and Surname
+                                        # Encode
+                                        state = state,
+                                        encode = encode,
+                                        choose_encode = choose_encode,
+                                        choose_time = choose_time,
+                                        # Split cloze
+                                        split_cloze = split_cloze,
+                                        part_glue = part_glue
+    )) %>%
+    purrr::map(~dplyr::select(.x, Name, ID, State, tidyselect::starts_with("R"))) %>%
     # Prefix column "Responses" and "State" with names(list)
-    rename_with_ls_df_names(.cols = starts_with("R"), sep = sep_col) %>% 
-    rename_with_ls_df_names(.cols = starts_with("S"), sep = sep_col) %>% 
-   
+    rename_with_ls_df_names(.cols = tidyselect::starts_with("R"), sep = sep_col) %>%
+    rename_with_ls_df_names(.cols = tidyselect::starts_with("S"), sep = sep_col) %>%
+
     purrr::reduce(dplyr::full_join, by = c("ID", "Name"))
-  
+
 }
 
 tech_resp_ls_raw %>% 
@@ -119,6 +131,8 @@ tech_grad_df2_raw %>%
 ```{r combine_resp.data.frame}
 combine_resp.data.frame <- function(data,
                                     # Clean
+                                    extract_id_from = c("Email address", 
+                                             "Institution", "Department"),
                                     id_regex = ".*", # Extract ID from Email
                                     sep_name = " ", # Separate First name and Surname
                                     # Encode
@@ -128,13 +142,15 @@ combine_resp.data.frame <- function(data,
                                     choose_time = c("first", "last", "all"),
                                     # Split cloze
                                     split_cloze = F, 
-                                    part_glue = "_part_"
+                                    part_glue = "_part_",
+                                    ...
                                     ) {
   
   if(!is_responses_report(data)) stop("`data` is not a Moodle Responses report.", call. = F)
   
   data_enc <- data %>% 
     clean_moodle(id_regex = id_regex, sep_name = sep_name, 
+                 extract_id_from = extract_id_from,
                  force_numeric = FALSE, dash_na = FALSE) %>% 
     encode_moodle(state = state, encode = encode, 
                   choose_encode = choose_encode, 
@@ -143,15 +159,20 @@ combine_resp.data.frame <- function(data,
   # If not split cloze column; return
   if(!split_cloze) return(data_enc) 
   # If choose to split_cloze and not found cloze col; Error
-  if(!has_cloze_col(data_enc)) stop("This Moodle Responses report has no Cloze column to split")
-  
-  cloze_col_nm <- get_cloze_col_names(data_enc)
+  if(!has_cloze_col(data_enc)) stop("This Moodle Responses report has no Cloze column to split", call. = F)
+
   split_cloze(data_enc, part_glue = part_glue)
 
 }
 
 tech_resp_df2_raw %>% 
   combine_resp.data.frame(split_cloze = T) 
+
+
+ncv_po_resp_raw %>% combine_resp.data.frame(split_cloze = F)
+
+tm_ncv_resp %>% combine_resp.data.frame(extract_id_from = "Institution",
+                                        split_cloze = F)
 ```
 
 ```{r}
@@ -208,5 +229,4 @@ tech_resp_df2_raw %>%
   
   split_cloze_col(Response_1)
 ```
-
 

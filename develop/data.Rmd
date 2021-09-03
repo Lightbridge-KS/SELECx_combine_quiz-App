@@ -7,7 +7,8 @@ output: html_notebook
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # Set WD to Root
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(tidyverse)
-
+library(here)
+here::i_am("develop/data.Rmd")
 ```
 
 # Namespace usage
@@ -19,9 +20,16 @@ require(dplyr)
 require(purrr)
 require(tidyr)
 require(stringr)
-require(lubridate)
+require(lubridate) # lubridate::dmy_hm
 ```
 
+
+```{r}
+names(tech_grad_df2_raw)
+names(tech_resp_df1_raw)
+
+tech_resp_df1_raw
+```
 
 
 # Read Responses
@@ -42,6 +50,18 @@ tech_resp_df2_raw <- tech_resp_ls_raw$`Techno_2_resp_no-essay`
 rs4_resp_ls <- lbr::rd(read_csv, path = "data/Responses", pattern = "RS4")
 ```
 
+## Responses with Question stem
+
+319: RS case 2
+
+```{r}
+rs2_respmix_ls <- lbr::rd(read_csv, path = "data/Responses", pattern = "RS2")
+```
+
+```{r}
+rs2_respmix_ls[[1]] %>% names()
+```
+
 
 ```{r}
 tech_resp_df1_raw 
@@ -52,6 +72,35 @@ rs4_resp_ls
 ```{r}
 tech_resp_df2_raw
 ```
+
+## PO NCV
+
+```{r ncv_po_resp_raw}
+ncv_po_resp_raw <- read_csv(here("data/Responses/NCV_PO_resp.csv"))
+
+ncv_po_resp_raw
+```
+
+
+### Some Has no "Grade" column ??
+
+```{r}
+int_nerv_resp <- read_csv("data/Responses/Int_nervous_resp.csv")
+
+int_nerv_resp %>% names()
+```
+
+## Multiple Answered MCQ
+
+```{r}
+repro_mans_resp_ls <- list(
+csv = read_csv("data/Responses/SIID223-63-Summative-Part 2_responses.csv"),
+excel = readxl::read_excel("data/Responses/SIID223-63-Summative-Part 2_responses.xlsx")
+)
+
+repro_mans_resp_ls
+```
+
 
 
 # Read Grades
@@ -81,6 +130,23 @@ f2_mgrad_raw <- read_csv("data/Grades/SIID222_Formative_2_num_multi.csv")
 
 tm_mgrad_raw 
 f2_mgrad_raw
+```
+
+## Varient: ID in Institution col
+
+```{r tm_ncv_gr}
+tm_ncv_gr <- read_csv("data/Grades/TM-NCV-Student-ID_Varient_Gr.csv")
+
+tm_ncv_resp <- read_csv("data/Responses/TM-NCV-Student-ID_Varient_Resp.csv")
+```
+
+
+# ID
+
+```{r}
+tech_id <- read_csv("data/ID/techno_id.csv") %>% map_df(as.character)
+
+tech_id
 ```
 
 

@@ -42,29 +42,40 @@ if "Not yet graded" or "Requires grading" is presented will convert to `NA`
 
 ## General Cleaning
 
+
+Also can choose to extract ID from Institution, department, or Email
+
 ```{r clean_moodle}
-clean_moodle <- function(df_raw, 
-                         extract_id = TRUE, id_regex = ".*", # Extract ID from Email
+clean_moodle <- function(data, 
+                         extract_id = TRUE, 
+                         extract_id_from = c("Email address", 
+                                             "Institution", "Department"),
+                         id_regex = ".*", # Extract ID regex
                          sep_name = " ", # Separate First name and Surname
                          dash_na = TRUE, # Format Dash "-" to NA
                          force_numeric = TRUE # Force format Grade and Q column to numeric
                          ) {
   
-  if(!is_report(df_raw)) stop("This is not a moodle quiz report.", call. = F)
-  quiz_attr <- get_quiz_attr(df_raw)
+  extract_id_from <- match.arg(extract_id_from)
   
-  df_cleaned_1 <- df_raw %>% 
+  if(!is_report(data)) stop("This is not a moodle quiz report.", call. = F)
+  
+  q_max_no_df <- get_questions_no_max(data)
+  resp_no <- get_responses_no(data)
+  
+  df_cleaned_1 <- data %>% 
     # Filter out "Overall average" in the last row of Grade report
     dplyr::filter(!is.na(`Email address`)) %>% 
     # Select Column that use in all type of Moodler Function
-    dplyr::select(tidyselect::all_of(c("First name", "Surname", 
+    dplyr::select(tidyselect::any_of(c("First name", "Surname", 
+                                       "Institution", "Department",
                                        "Email address", "State", "Started on")),
                   # Select Grade column (if any)
                   tidyselect::starts_with("G"),
                   # Select Response column (if any)
-                  tidyselect::starts_with("R"),
+                  tidyselect::starts_with("Response"),
                   # Select Q. column (if any)
-                  tidyselect::starts_with("Q")) %>% 
+                  tidyselect::matches("Q\\.")) %>% 
     tidyr::unite("First name", "Surname", col = "Name", sep = sep_name) %>% 
     dplyr::rename(Email = "Email address", Started ="Started on") 
    
@@ -92,10 +103,10 @@ clean_moodle <- function(df_raw,
   }  
   
   # If Grades Report, rename Q column and remove max
-  if(is_grades_report(df_raw)){
+  if(is_grades_report(data)){
     
   df_cleaned_2 <- df_cleaned_1 %>% 
-      dplyr::rename_with(.fn = ~paste0("Q", quiz_attr$q_no), 
+      dplyr::rename_with(.fn = ~paste0("Q", q_max_no_df$q_no), 
                      .cols =  tidyselect::starts_with("Q")) 
     if(force_numeric){
       # Format Q_xx column to numeric; Even if it's "Requires grading" or dashed
@@ -110,10 +121,111 @@ clean_moodle <- function(df_raw,
     }
   }
   # If Responses Report, rename R column
-  if(is_responses_report(df_raw)){
+  if(is_responses_report(data)){
     
   df_cleaned_2 <- df_cleaned_1 %>% 
-      dplyr::rename_with(.fn = ~paste0("Response_", quiz_attr$resp_no), 
+      dplyr::rename_with(.fn = ~paste0("Response_", resp_no), 
+                     .cols =  tidyselect::starts_with("R"))
+  }
+  
+  if(!extract_id) return(df_cleaned_2)
+  # Extract Numeric ID from Email
+  id_col_expr <- switch (extract_id_from,
+    "Email address" = { dplyr::expr(Email) },
+    "Institution" = { dplyr::expr(Institution) },
+    "Department" = { dplyr::expr(Department) }
+  )
+  
+  df_cleaned_2 %>% 
+    dplyr::mutate(ID = as.character(stringr::str_extract(!!id_col_expr, id_regex)), 
+                .keep = "unused", .after = Name)
+  
+}
+
+tech_resp_df2_raw %>% clean_moodle(force_numeric = F, dash_na = F)
+tech_resp_df1_raw %>% clean_moodle(force_numeric = T, dash_na = T)
+int_nerv_resp %>% clean_moodle()
+ncv_po_resp_raw %>% clean_moodle()
+
+clean_moodle(tm_ncv_gr, extract_id_from = "Institution")
+```
+
+## Clean (Old Version)
+
+```{r clean_moodle2}
+clean_moodle2 <- function(data, 
+                         extract_id = TRUE, id_regex = ".*", # Extract ID from Email
+                         sep_name = " ", # Separate First name and Surname
+                         dash_na = TRUE, # Format Dash "-" to NA
+                         force_numeric = TRUE # Force format Grade and Q column to numeric
+                         ) {
+  
+  if(!is_report(data)) stop("This is not a moodle quiz report.", call. = F)
+  
+  q_max_no_df <- get_questions_no_max(data)
+  resp_no <- get_responses_no(data)
+  
+  df_cleaned_1 <- data %>% 
+    # Filter out "Overall average" in the last row of Grade report
+    dplyr::filter(!is.na(`Email address`)) %>% 
+    # Select Column that use in all type of Moodler Function
+    dplyr::select(tidyselect::all_of(c("First name", "Surname", 
+                                       "Email address", "State", "Started on")),
+                  # Select Grade column (if any)
+                  tidyselect::starts_with("G"),
+                  # Select Response column (if any)
+                  tidyselect::starts_with("Response"),
+                  # Select Q. column (if any)
+                  tidyselect::matches("Q\\.")) %>% 
+    tidyr::unite("First name", "Surname", col = "Name", sep = sep_name) %>% 
+    dplyr::rename(Email = "Email address", Started ="Started on") 
+   
+  # Replace dash "-" with NA
+  if(dash_na){
+    df_cleaned_1 <- df_cleaned_1 %>% purrr::map_df(~dplyr::na_if(.x, "-"))
+  }
+  
+  df_cleaned_1 <- df_cleaned_1 %>% 
+    # Reformat Stated Date to POSIXct
+    dplyr::mutate(Started = lubridate::dmy_hm(Started)) %>% 
+    # Replace "/" at Grade/xx column
+    dplyr::rename_with(.fn = ~str_replace(.x, "/", "_")) 
+  
+  # Format Grade column to numeric; Even if it's "Not yet graded" or dashed
+  if(force_numeric){
+  df_cleaned_1 <- df_cleaned_1 %>% 
+    dplyr::mutate(
+      dplyr::across(tidyselect::starts_with("G"), 
+                    ~dplyr::na_if(.x, "Not yet graded")),
+      dplyr::across(tidyselect::starts_with("G"), 
+                    ~dplyr::na_if(.x, "-")),
+      dplyr::across(tidyselect::starts_with("G"), as.numeric)
+      )
+  }  
+  
+  # If Grades Report, rename Q column and remove max
+  if(is_grades_report(data)){
+    
+  df_cleaned_2 <- df_cleaned_1 %>% 
+      dplyr::rename_with(.fn = ~paste0("Q", q_max_no_df$q_no), 
+                     .cols =  tidyselect::starts_with("Q")) 
+    if(force_numeric){
+      # Format Q_xx column to numeric; Even if it's "Requires grading" or dashed
+      df_cleaned_2 <- df_cleaned_2 %>% 
+        dplyr::mutate(
+          dplyr::across(tidyselect::starts_with("Q"), 
+                        ~dplyr::na_if(.x, "Requires grading")),
+          dplyr::across(tidyselect::starts_with("Q"), 
+                        ~dplyr::na_if(.x, "-")),
+          dplyr::across(tidyselect::starts_with("Q"), as.numeric)
+          ) 
+    }
+  }
+  # If Responses Report, rename R column
+  if(is_responses_report(data)){
+    
+  df_cleaned_2 <- df_cleaned_1 %>% 
+      dplyr::rename_with(.fn = ~paste0("Response_", resp_no), 
                      .cols =  tidyselect::starts_with("R"))
   }
   
@@ -127,9 +239,24 @@ clean_moodle <- function(df_raw,
 
 tech_resp_df2_raw %>% clean_moodle(force_numeric = F, dash_na = F)
 tech_resp_df1_raw %>% clean_moodle(force_numeric = T, dash_na = T)
+int_nerv_resp %>% clean_moodle()
+ncv_po_resp_raw %>% clean_moodle()
 
-tm_mgrad_raw %>% clean_moodle()
+tm_mgrad_raw %>% moodleQuiz::clean_moodle(id_regex = "[:digit:]+")
 ```
+
+
+                                             
+```{r}
+int_nerv_resp %>% get_questions_no_max()
+int_nerv_resp %>% get_responses_no()
+
+tech_grad_df2_raw%>% get_questions_no_max()
+```
+```{r}
+int_nerv_resp %>% clean_moodle() %>% encode_moodle()
+```
+
 
 ```{r}
 tech_resp_df1_raw  %>% 
@@ -191,13 +318,13 @@ rename_with_ls_df_names <- function(ls_df,
   }
 
   names(ls) <- nm
+  
   ls
   
 }
 
 tech_resp_ls_raw %>% 
-  rename_with_ls_df_names(.cols = starts_with("R"), name_position = "p", sep = ": ") %>% 
-  map(names)
+  rename_with_ls_df_names(.cols = starts_with("R"), name_position = "p", sep = ": ") 
 ```
 
 

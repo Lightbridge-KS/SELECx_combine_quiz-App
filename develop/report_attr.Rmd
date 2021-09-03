@@ -6,6 +6,7 @@ output: html_notebook
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # Set WD to Root
 library(tidyverse)
+library(rstatix)
 library(testthat)
 ```
 
@@ -72,7 +73,7 @@ test_that("get_quiz_attr",{
   get_quiz_attr(tech_grad_ls_raw) %>% expect_error("`data` must be a data.frame")
   get_quiz_attr(iris) %>% expect_error("is not a moodle quiz report")
   
-  expect_equal(get_cloze_col_names(iris), NA_character_)
+  expect_equal(get_cloze_col_names(iris), NULL)
   
 })
 ```
@@ -114,7 +115,7 @@ tech_grad_df2_raw %>%
 get_questions_no_max <- function(df_gr) {
   
   nm <- names(df_gr)
-  q_colnm <- stringr::str_subset(nm, "Q")
+  q_colnm <- stringr::str_subset(nm, "Q\\.")
   # Question No: Extract first set of digits before / 
   q_number <- as.integer(stringr::str_extract(q_colnm, "[:digit:]+"))
   # Question Max: Extract everything after /
@@ -131,6 +132,7 @@ Responses report
 
 ```{r}
 tech_resp_df1_raw %>% get_questions_no_max()
+ncv_po_resp_raw %>% get_questions_no_max()
 ```
 
 
@@ -158,14 +160,16 @@ tech_grad_df2_raw %>%
 get_responses_no <- function(df_resp) {
   
   nm <- names(df_resp)
-  resp_colnm <- stringr::str_subset(nm, "R")
+  resp_colnm <- stringr::str_subset(nm, "Response")
   resp_no <-  stringr::str_extract(resp_colnm, "[:digit:]+")
   as.integer(resp_no)
   
 }
 
 tech_resp_df1_raw %>% get_responses_no()
+ncv_po_resp_raw %>% get_responses_no()
 ```
+
 
 
 ```{r}

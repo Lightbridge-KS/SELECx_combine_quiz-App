@@ -6,7 +6,7 @@ output: html_notebook
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # Set WD to Root
 library(tidyverse)
-
+library(rstatix)
 ```
 
 ## Data Cloze column
@@ -31,12 +31,33 @@ get_cloze_col_names <- function(df) {
     purrr::map_lgl(any)
   
   nm <- names(which(is_cloze_lgl))
-  if(length(nm) == 0) return(NA_character_)
+  if(length(nm) == 0) return(NULL)  #return(NA_character_)
   nm
 }
 
 cloze_cols_df %>% get_cloze_col_names()
 iris %>% get_cloze_col_names()
+```
+
+## Non-Cloze column names ?
+
+```{r get_noncloze_resp_colnm}
+get_noncloze_resp_colnm <- function(df) {
+  
+ regex <- "part [:digit:]+:"
+ is_cloze_lgl <- df %>% 
+    dplyr::select(tidyselect::starts_with("Response")) %>% 
+    purrr::map(~stringr::str_detect(.x, regex)) %>% 
+    purrr::map_lgl(any) 
+ 
+  nm <- names(which(!is_cloze_lgl))
+  if(length(nm) == 0) return(NULL) #return(NA_character_)
+  nm
+  
+}
+tech_resp_df2_raw %>% get_noncloze_resp_colnm()
+
+ncv_po_resp_raw %>% get_noncloze_resp_colnm()
 ```
 
 ## Does DF has cloze column ?
@@ -56,6 +77,11 @@ iris %>% has_cloze_col()
 cloze_cols_df %>% has_cloze_col()
 ```
 
+```{r}
+tech_resp_ls_raw %>% some(has_cloze_col)
+```
+
+
 
 ```{r}
 cloze_cols_df %>% 
@@ -64,17 +90,45 @@ cloze_cols_df %>%
 ```
 
 
-Split Cloze to multiple Rows & to Columns
+## Count Individual Parts of Cloze 
 
-```{r}
-cloze_string <- c("part 1: เพิ่มขึ้น; part 2: ลดลง; part 3: ลดลง")
+
+### How many **parts** for every cloze columns
+
+```{r get_cloze_attr}
+get_cloze_attr <- function(data) {
+  
+  if(!has_cloze_col(data)) stop("`data` has no cloze column.", call. = F)
+  
+  cloze_colnm <- get_cloze_col_names(data)
+  cloze_parts <- purrr::map_int(cloze_colnm, ~get_cloze_parts(data, .x))
+  
+  df <- data.frame(cloze_colnm = cloze_colnm, parts = cloze_parts)
+  df
+}
+
+get_cloze_attr(tech_resp_df2_raw)
 ```
 
-```{r}
-cloze_string %>% 
-  str_split(";") %>% 
-  str_trim(side = "both") %>% writeLines()
+
+### How many Parts of per one Cloze col
+
+```{r get_cloze_parts}
+get_cloze_parts <- function(data, cloze_col){
+  
+  cloze_regex <- "part [:digit:]+:"
+  
+  data[[cloze_col]] %>% 
+    stringr::str_count(cloze_regex) %>% 
+    unique() %>% 
+    max(na.rm = T)
+
+}
+
+get_cloze_parts(tech_resp_df1_raw, "Response 2")
 ```
+
+
 
 # Automatic Split Cloze columns
 
@@ -143,7 +197,7 @@ split_cloze_col <- function(data, col,
                             part_glue = "_part_"
                             ) {
   
-  split_type <- match.arg(split_type)
+  split_type <- rlang::arg_match(split_type)
   col <- rlang::ensym(col)
   col_labs <- rlang::as_label(col)
   regex <- "part [:digit:]+:"
@@ -175,7 +229,7 @@ split_cloze_col <- function(data, col,
   
 }
 
-split_cloze_col(cloze_cols_df, "Response_2", split_type = "c") 
+split_cloze_col(cloze_cols_df, "Response_2", split_type = "rows", part_glue = "a") 
 
 tech_resp_df1_raw %>% split_cloze_col("Response 2")
 ```

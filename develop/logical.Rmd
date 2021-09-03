@@ -17,9 +17,9 @@ library(testthat)
 
 ```{r report_col_regex}
 report_col_regex <- list(
-  moodle = c("Surname", "First name", "Email address", "State", "Grade", "(Q)|(Response)"),
-  grades = c("Surname", "First name", "Email address", "State", "Grade", "Q"),
-  responses = c("Surname", "First name", "Email address", "State", "Grade", "Response")
+  moodle = c("Surname", "First name", "Email address", "State"),
+  grades = c("Surname", "First name", "Email address", "State", "Grade", "Q\\."),
+  responses = c("Surname", "First name", "Email address", "State", "Response")
 )
 ```
 
@@ -72,7 +72,17 @@ is_report <- function(data) {
 is_report(tech_grad_df2_raw)
 is_report(tech_resp_df1_raw)
 is_report(iris)
+
+is_report(ncv_po_resp_raw)
 ```
+
+
+
+```{r}
+int_nerv_resp %>% 
+  is_regex_in_names(report_col_regex$moodle, verbose = T)
+```
+
 
 ```{r}
 test_that("is_report",{
@@ -99,7 +109,16 @@ is_grades_report <- function(data) {
 
 is_grades_report(tech_grad_df2_raw)
 is_grades_report(tech_resp_df1_raw)
+
+is_grades_report(ncv_po_resp_raw)
 ```
+
+```{r}
+tech_grad_df2_raw %>% 
+  names() %>% 
+  str_subset("Q\\.")
+```
+
 
 ```{r}
 test_that("is_grades_report",{
@@ -126,6 +145,8 @@ is_responses_report <- function(data) {
 is_responses_report(tech_resp_df1_raw)
 is_responses_report(tech_grad_df2_raw)
 is_responses_report(tech_grad_ls_raw)
+
+is_responses_report(ncv_po_resp_raw)
 ```
 
 ```{r}
@@ -195,6 +216,22 @@ names(tech_grad_df2_raw) %>%
 
   map_lgl(any) 
 ```
+
+# Has Grade column ?
+
+
+No Grade column
+
+```{r}
+int_nerv_resp %>% is_regex_in_names("Grade")
+```
+
+Has Grade column
+
+```{r}
+tech_resp_df1_raw %>% is_regex_in_names("Grade")
+```
+
 
 # Numeric Grade or "Not yet graded"
 

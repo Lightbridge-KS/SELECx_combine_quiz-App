@@ -2,7 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-app_dev
-data
-develop
-fun_backup
+app_dev/
+data/
+develop/
+fun_backup/

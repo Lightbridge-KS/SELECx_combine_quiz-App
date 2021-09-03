@@ -10,6 +10,9 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 
 <!-- badges: end -->
 
+App currently deployed:
+[`here`](https://si-physio-intern.shinyapps.io/SELECx_combine_quiz/)
+
 This Shiny Application combine Moodle’s Quiz report from
 [SELECx](http://selecx.si.mahidol.ac.th).
 

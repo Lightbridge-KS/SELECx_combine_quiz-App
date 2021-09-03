@@ -17,4 +17,14 @@ This Shiny Application combine Moodle’s Quiz report from
 [SELECx](http://selecx.si.mahidol.ac.th).
 
 The main business logic was based on
-[moodleQuiz](https://github.com/Lightbridge-AI/moodleQuiz) package.
+[moodleQuiz](https://github.com/Lightbridge-AI/moodleQuiz) package by
+its 4 main functions:
+
+-   **Check Submission:** `check_sub()`
+
+-   **Combine Responses:** `combine_resp()` and `count_resp()`
+
+-   **Combine Grades:** `combine_grades()`
+
+Other data manipulation was performed using R meta-packages:
+[tidyverse](https://www.tidyverse.org).

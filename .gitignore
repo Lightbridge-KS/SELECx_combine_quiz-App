@@ -3,6 +3,6 @@
 .RData
 .Ruserdata
 app_dev/
-data/
+data/**
 develop/
 fun_backup/

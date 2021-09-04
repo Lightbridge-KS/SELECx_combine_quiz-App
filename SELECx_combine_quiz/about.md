@@ -21,4 +21,4 @@ The details in Thai languages can be found
 -   **Contact:** [kittipos.sir@mahidol.edu](kittipos.sir@mahidol.edu)
 
 -   **Source code** is available in
-    [Github](https://github.com/Lightbridge-AI/SELECx_combine_quiz-App)
+    [Github](https://github.com/Lightbridge-KS/SELECx_combine_quiz-App)

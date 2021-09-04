@@ -23,7 +23,7 @@ App currently deployed: [`here`](https://si-physio-intern.shinyapps.io/SELECx_co
 
 This Shiny Application combine Moodle's Quiz report from [SELECx](http://selecx.si.mahidol.ac.th).
 
-The main business logic was based on [moodleQuiz](https://github.com/Lightbridge-AI/moodleQuiz) package by its 4 main functions:
+The main business logic was based on [moodleQuiz](https://github.com/Lightbridge-KS/moodleQuiz) package by its 4 main functions:
 
 -   **Check Submission:** `check_sub()`
 

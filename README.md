@@ -17,7 +17,7 @@ This Shiny Application combine Moodle’s Quiz report from
 [SELECx](http://selecx.si.mahidol.ac.th).
 
 The main business logic was based on
-[moodleQuiz](https://github.com/Lightbridge-AI/moodleQuiz) package by
+[moodleQuiz](https://github.com/Lightbridge-KS/moodleQuiz) package by
 its 4 main functions:
 
 -   **Check Submission:** `check_sub()`

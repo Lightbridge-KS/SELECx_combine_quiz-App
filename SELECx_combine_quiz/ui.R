@@ -34,9 +34,10 @@ ui <- navbarPage("SELECx Combine Quiz", inverse = F,
                           combine_grades_UI("combine_grades")
                           ),
                  
-                 tabPanel("List Files",
+                 tabPanel("Check File Submission",
                           
-                          list_files_UI("list_files")
+                          #list_files_UI("list_files")
+                          extract_listfile_UI("extract_listfile")
                           ),
                  
                  tabPanel("About",

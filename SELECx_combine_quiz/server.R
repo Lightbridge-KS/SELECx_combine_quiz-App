@@ -21,7 +21,8 @@ server <- function(input, output, session) {
     
     combine_grades_Server("combine_grades")
     
-    list_files_Server("list_files")
+    #list_files_Server("list_files")
+    extract_listfile_Server("extract_listfile")
     
 }
 

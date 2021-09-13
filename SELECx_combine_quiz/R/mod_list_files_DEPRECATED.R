@@ -1,4 +1,4 @@
-### Module:  Extract PDF file names from SELECx
+### Module:  Extract PDF file names from SELECx (Deprecated)
 
 
 library(shiny)

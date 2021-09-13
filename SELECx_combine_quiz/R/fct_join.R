@@ -1,6 +1,6 @@
 # Join DF to ID file 
 
-#' Join DF to ID file
+#' Join DF to ID file (Deprecated)
 #'
 #' @param ids ID data.frame must has "Name" and "ID" column
 #' @param df Report data.frame that has "Name" and "ID" column
@@ -22,7 +22,7 @@ join_id <- function(ids, df, ... ){
 }
 
 
-#' Join ID version 2
+#' Join ID version 2 (In Use)
 #' 
 #' Works with mod_select_id_cols.R
 #'

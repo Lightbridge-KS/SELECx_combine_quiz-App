@@ -14,7 +14,7 @@ moodle_extract_listfile <- function(df) {
   if(!is_colnm_correct) stop("`data frame` must contain one column named 'File'", 
                              call. = F)
   
-  df %>%
+  df_mod <- df %>%
     dplyr::mutate(
       Name = stringr::str_extract(File, "[^_]+"),
       File_Name = stringr::str_extract(File, "(?<=_assignsubmission_file_).+"),
@@ -23,9 +23,10 @@ moodle_extract_listfile <- function(df) {
     ) %>%
     dplyr::select(Name, ID, File, File_Name, Extension)
   
+  df_mod %>% 
+    dplyr::mutate(Encode = as.numeric(!is.na(ID)))
   
 }
-
 
 # UI ----------------------------------------------------------------------
 
@@ -84,7 +85,13 @@ extract_listfile_UI <- function(id) {
     tags$ul(
       tags$li(tags$b("File:"), " Original \"File\" column from uploaded list files."),
       tags$li(tags$b("File_Name:"), " Names of the student's submission files."),
-      tags$li(tags$b("Extension:"), " File extension of the student's submission files.")
+      tags$li(tags$b("Extension:"), " File extension of the student's submission files."),
+      tags$li(tags$b("Encode")),
+        tags$ul(
+          tags$li(tags$b("Encode = 1:"), " Student submitted file to SELECx and 7 consecutive numbers (student ID) was found in ", tags$b("File_Name")),
+          tags$li(tags$b("Encode = 0:"), " Student submitted file to SELECx but 7 consecutive numbers (student ID) was ", tags$b("not"), " found in ", tags$b("File_Name")),
+          tags$li(tags$b("Blank:"), "Student ", tags$b("not"), " submitted file to SELECx", tags$i(" or "), tags$b("not"), " included 7 consecutive numbers (student ID) in ", tags$b("File_Name"))
+        )
     ),
     
     br(),

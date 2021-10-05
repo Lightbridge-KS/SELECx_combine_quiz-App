@@ -9,6 +9,8 @@ library(stringr)
 library(ggplot2)
 library(moodleQuiz)
 
+library(markdown) # To include Markdown
+
 
 ui <- navbarPage("SELECx Combine Quiz", inverse = F,
                  #theme = shinythemes::shinytheme("cerulean"),
@@ -44,6 +46,8 @@ ui <- navbarPage("SELECx Combine Quiz", inverse = F,
                           
                           includeMarkdown("about.md")
                           )
+                 
+            
     
   
 )

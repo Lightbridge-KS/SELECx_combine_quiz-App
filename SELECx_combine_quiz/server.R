@@ -9,6 +9,8 @@ library(stringr)
 library(ggplot2)
 library(moodleQuiz)
 
+library(markdown) # To include Markdown
+
 
 
 server <- function(input, output, session) {

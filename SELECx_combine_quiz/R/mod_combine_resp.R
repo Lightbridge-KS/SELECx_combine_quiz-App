@@ -45,17 +45,19 @@ combine_resp_UI <- function(id) {
              br(),
              read_UI(ns("file"), buttonLabel = "Upload Reports", width = validateCssUnit("fit-content"), multiple = T),
              htmlOutput(ns("validate_msg")),
+             helpText("4) ", "Upload ID file that has column \"Name\" for student's names and \"ID\" for student's id numbers."),
+             br()
              ),
       column(6,
              # Extract ID from ---------------------------------------------------------
              br(),
-             extract_id_col_UI(ns("extract_id_col"))
+             extract_id_col_UI(ns("extract_id_col")),
+             encode_type_select_UI(ns("encode_type"))
              )
     ),
 
     
-    helpText("4) ", "Upload ID file that has column \"Name\" for student's names and \"ID\" for student's id numbers."),
-    br(),
+
     fileInput(ns("file_id"), NULL, accept = c(".csv", ".xls",".xlsx"),buttonLabel = "Upload ID",
               placeholder = "choose file .csv or .xlsx"),
     select_id_cols_UI(ns("choose_cols")),
@@ -173,6 +175,11 @@ combine_resp_Server <- function(id) {
       
       id_df_selected <- select_id_cols_Server("choose_cols", id_df)
       
+
+      # Select Encoding ---------------------------------------------------------
+      
+      choose_enc  <- encode_type_select_Server("encode_type")
+      
       
       # Process -----------------------------------------------------------------
       
@@ -196,8 +203,8 @@ combine_resp_Server <- function(id) {
         moodleQuiz::combine_resp(data_raw(),
                                  extract_id_from = id_col(),
                                  id_regex = "[:digit:]+",
-                                 choose_encode = "max",
-                                 choose_time = "first",
+                                 choose_encode = choose_enc()$encode,
+                                 choose_time = choose_enc()$time,
                                  # If NULL or FALSE -> not split, TRUE -> Split
                                  split_cloze = isTruthy(input$split_cloze),
                                  part_glue = "."
@@ -217,8 +224,8 @@ combine_resp_Server <- function(id) {
           moodleQuiz::count_resp(data_raw(),
                                  extract_id_from = id_col(),
                                  id_regex = "[:digit:]+",
-                                 choose_encode = "max",
-                                 choose_time = "first",
+                                 choose_encode = choose_enc()$encode,
+                                 choose_time = choose_enc()$time,
                                  # If NULL or FALSE -> not split, TRUE -> Split
                                  count_cloze_parts = isTruthy(input$split_cloze)
         )

@@ -60,8 +60,8 @@ combine_resp_UI <- function(id) {
 
     fileInput(ns("file_id"), NULL, accept = c(".csv", ".xls",".xlsx"),buttonLabel = "Upload ID",
               placeholder = "choose file .csv or .xlsx"),
-    select_id_cols_UI(ns("choose_cols")),
     
+    select_id_cols_UI(ns("choose_cols")),
     uiOutput(ns("split_cloze_checkbox")),
 
     
@@ -204,7 +204,7 @@ combine_resp_Server <- function(id) {
                                  extract_id_from = id_col(),
                                  id_regex = "[:digit:]+",
                                  choose_encode = choose_enc()$encode,
-                                 choose_time = choose_enc()$time,
+                                 choose_time =  choose_enc()$time,
                                  # If NULL or FALSE -> not split, TRUE -> Split
                                  split_cloze = isTruthy(input$split_cloze),
                                  part_glue = "."

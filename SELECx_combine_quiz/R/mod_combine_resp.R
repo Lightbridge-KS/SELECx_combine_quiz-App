@@ -5,7 +5,6 @@ library(DT)
 library(dplyr)
 library(purrr)
 
-
 # UI ----------------------------------------------------------------------
 
 
@@ -73,11 +72,20 @@ combine_resp_UI <- function(id) {
     h3("Count Responses"),
     helpText("This table counts how many responses that student answered from each quiz."),
     helpText("Blanked or dashed ( `-` ) responses will not be counted."),
+    br(),
     DT::DTOutput(ns("table_counted")),
     
     hr(),
     h3("Missing Names"),
     DT::DTOutput(ns("table_miss")),
+    
+    hr(),
+    
+    h3("Caution"),
+    helpText("This table detects responses that might be inappropriate or incomplete."),
+    helpText("The conspicuous responses will be reported in 'Caution' column."),
+    br(),
+    DT::DTOutput(ns("table_inapp")),
     
     verbatimTextOutput(ns("raw"))
   )
@@ -208,7 +216,10 @@ combine_resp_Server <- function(id) {
                                  # If NULL or FALSE -> not split, TRUE -> Split
                                  split_cloze = isTruthy(input$split_cloze),
                                  part_glue = "."
-                                 )
+                                 ) %>% 
+          # Report Inappropriate Words (by add column "Caution")
+          report_spam_words(contains("Response"), patterns = unlist(inapp_word_ls),
+                            name = "Caution")
 
         
       })
@@ -292,6 +303,18 @@ combine_resp_Server <- function(id) {
           filter(if_any(starts_with("Name"), is.na))
       })
       
+      # Inappropriate Word (Caution) -----------------------------------------------------------
+      
+      data_processed_inapp <- reactive({
+        
+        data_processed_joined() %>% 
+          relocate(Caution, .before = contains("Response")) %>% 
+          #select(-contains("Response")) %>%
+          filter(!is.na(Caution))
+        
+      })
+      
+      
       # Show Table --------------------------------------------------------------
       
       output$table <- DT::renderDT({
@@ -317,19 +340,27 @@ combine_resp_Server <- function(id) {
         
       }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), selection = 'none')
       
+      
+      output$table_inapp <- DT::renderDT({
+        
+        data_processed_inapp()
+        
+      }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), selection = 'none')
+      
       # Download ----------------------------------------------------------------
       
       download_xlsx_Server("download", 
                            list("Combine Responses" = data_processed_joined(), 
                                 "Count Responses" = data_counted_joined(),
-                                "Missing Names" = data_processed_missing()), 
+                                "Missing Names" = data_processed_missing(),
+                                "Caution" = data_processed_inapp()), 
                            filename = "Combined_Responses.xlsx")
       
       
       # output$raw <- renderPrint({
-      #   
-      #   input$split_cloze
-      #   
+      # 
+      #   inapp_word
+      # 
       # })
   
   

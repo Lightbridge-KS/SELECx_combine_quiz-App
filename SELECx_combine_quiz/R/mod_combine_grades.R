@@ -234,7 +234,15 @@ combine_grades_Server <- function(id) {
         
         req(is_valid_data())
         
-        moodleQuiz::combine_grades(data_raw(),
+        dat <- if (length(data_raw()) == 1) {
+         # Upload only 1 Moodle Quiz
+          data_raw()[[1]]
+        }else{
+         # Upload Multiple Moodle Quiz
+          data_raw()
+        }
+        
+        moodleQuiz::combine_grades(dat,
                                    extract_id_from = id_col(),
                                    id_regex = "[:digit:]+",
                                    new_max_grade = new_max_grade(),
@@ -242,10 +250,8 @@ combine_grades_Server <- function(id) {
                                    choose_grade = choose_gt()$grade,
                                    choose_time = choose_gt()$time,
                                    force_grade = FALSE
-                                   )
-        
+        )
 
-        
         
       })
       

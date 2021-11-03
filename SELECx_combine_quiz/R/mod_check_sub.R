@@ -173,7 +173,17 @@ check_sub_Server <- function(id) {
       data_processed <- reactive({
         
         req(is_all_report())
-        moodleQuiz::check_sub(data_raw(), 
+        
+        dat <- if (length(data_raw()) == 1) {
+          # If upload only 1 Moodle Quiz, nake list of 1 DF to DF.
+          data_raw()[[1]]
+        }else{
+          # If upload Multiple Moodle Quiz, passed as list of DF.
+          data_raw()
+        }
+        
+        
+        moodleQuiz::check_sub(dat, 
                               extract_id_from = id_col(),
                               id_regex = "[:digit:]+",
                               choose_encode = "max",

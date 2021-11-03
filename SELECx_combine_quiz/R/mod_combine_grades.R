@@ -235,10 +235,10 @@ combine_grades_Server <- function(id) {
         req(is_valid_data())
         
         dat <- if (length(data_raw()) == 1) {
-         # Upload only 1 Moodle Quiz
+         # If upload only 1 Moodle Quiz, nake list of 1 DF to DF.
           data_raw()[[1]]
         }else{
-         # Upload Multiple Moodle Quiz
+         # If upload Multiple Moodle Quiz, passed as list of DF.
           data_raw()
         }
         

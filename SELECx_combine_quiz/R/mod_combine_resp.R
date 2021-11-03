@@ -208,7 +208,16 @@ combine_resp_Server <- function(id) {
         
         req(is_all_resp_report())
         
-        moodleQuiz::combine_resp(data_raw(),
+        dat <- if (length(data_raw()) == 1) {
+          # If upload only 1 Moodle Quiz, nake list of 1 DF to DF.
+          data_raw()[[1]]
+        }else{
+          # If upload Multiple Moodle Quiz, passed as list of DF.
+          data_raw()
+        }
+        
+        
+        moodleQuiz::combine_resp(dat,
                                  extract_id_from = id_col(),
                                  id_regex = "[:digit:]+",
                                  choose_encode = choose_enc()$encode,
@@ -232,7 +241,15 @@ combine_resp_Server <- function(id) {
         
         req(is_all_resp_report())
         
-          moodleQuiz::count_resp(data_raw(),
+        dat <- if (length(data_raw()) == 1) {
+          # If upload only 1 Moodle Quiz, nake list of 1 DF to DF.
+          data_raw()[[1]]
+        }else{
+          # If upload Multiple Moodle Quiz, passed as list of DF.
+          data_raw()
+        }
+        
+          moodleQuiz::count_resp(dat,
                                  extract_id_from = id_col(),
                                  id_regex = "[:digit:]+",
                                  choose_encode = choose_enc()$encode,

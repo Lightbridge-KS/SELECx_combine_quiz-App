@@ -63,10 +63,10 @@ check_sub_UI <- function(id) {
             br(),
             fileInput(ns("file_id"), NULL, accept = c(".csv", ".xls",".xlsx"),buttonLabel = "Upload ID",
                       placeholder = "choose file .csv or .xlsx"),
-  
+            # Select ID Cols
             select_id_cols_UI(ns("choose_cols")),
-
-
+            # Arrange Cols
+            arrange_UI(ns("arrange")),
 
      
 
@@ -218,12 +218,17 @@ check_sub_Server <- function(id) {
       })
       
 
+      # Arrange Rows ------------------------------------------------------------
+      
+      data_joined_arranged <- arrange_Server("arrange", data_react = data_joined, selected = "ID")
+      
+
       # Missing Names -----------------------------------------------------------
 
       
       data_missing <- reactive({
         
-        data_joined() %>% 
+        data_joined_arranged() %>% 
            filter(if_any(starts_with("Name"), is.na))
       })
       
@@ -232,7 +237,7 @@ check_sub_Server <- function(id) {
 
       output$table <- DT::renderDT({
         
-        data_joined()
+        data_joined_arranged()
         
       }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), 
       selection = 'none',
@@ -250,13 +255,13 @@ check_sub_Server <- function(id) {
       # Download ----------------------------------------------------------------
       
       download_xlsx_Server("download", 
-                           list("Check Submission" = data_joined(), "Missing Names" = data_missing()), 
+                           list("Check Submission" = data_joined_arranged(), "Missing Names" = data_missing()), 
                            filename = "Check_Submission.xlsx")
 
       
       # output$raw <- renderPrint({
-      # 
-      #   id_col()
+      #   
+      #   head(data_joined_arranged())
       # 
       # })
       # 

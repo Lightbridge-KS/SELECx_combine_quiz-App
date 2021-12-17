@@ -58,6 +58,8 @@ combine_grades_UI <- function(id) {
              grades_type_select_UI(ns("grades_type")),
              adj_max_grades_UI(ns("adj_grades")),
              select_id_cols_UI(ns("choose_cols")),
+             # Arrange Rows by which Col
+             arrange_UI(ns("arrange"))
              )
     ),
     
@@ -277,12 +279,17 @@ combine_grades_Server <- function(id) {
         
       })
       
+
+      # Arrange Rows ------------------------------------------------------------
+
+      data_joined_arranged <- arrange_Server("arrange", data_react = data_joined)
+      
       # Missing Names -----------------------------------------------------------
       
       
       data_missing <- reactive({
         
-        data_joined() %>% 
+        data_joined_arranged() %>% 
           filter(if_any(starts_with("Name"), is.na))
       })
       
@@ -291,7 +298,7 @@ combine_grades_Server <- function(id) {
 
       output$table <- DT::renderDT({
         
-        data_joined()
+        data_joined_arranged()
         
       }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), 
       selection = 'none',
@@ -313,7 +320,7 @@ combine_grades_Server <- function(id) {
       # Download ----------------------------------------------------------------
       
       download_xlsx_Server("download", 
-                           list("Combine Grades" = data_joined(),                               
+                           list("Combine Grades" = data_joined_arranged(),                               
                                 "Missing Names" = data_missing()), 
                            filename = "Combined_Grades.xlsx")
   

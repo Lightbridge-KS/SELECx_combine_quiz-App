@@ -51,17 +51,28 @@ combine_resp_UI <- function(id) {
              # Extract ID from ---------------------------------------------------------
              br(),
              extract_id_col_UI(ns("extract_id_col")),
-             encode_type_select_UI(ns("encode_type"))
+             encode_type_select_UI(ns("encode_type")),
              )
     ),
 
     
+    fluidRow(
+      column(6,
+             fileInput(ns("file_id"), NULL, accept = c(".csv", ".xls",".xlsx"),buttonLabel = "Upload ID",
+                       placeholder = "choose file .csv or .xlsx"),
+             
+             select_id_cols_UI(ns("choose_cols")),
+             uiOutput(ns("split_cloze_checkbox")),
+             ),
+      column(6,
+             # Arrange Rows by which Col
+             arrange_UI(ns("arrange_resp"), "Sort Responses Data?"),
+             arrange_UI(ns("arrange_count"), "Sort Counts Data?")
+             )
+    ),
 
-    fileInput(ns("file_id"), NULL, accept = c(".csv", ".xls",".xlsx"),buttonLabel = "Upload ID",
-              placeholder = "choose file .csv or .xlsx"),
     
-    select_id_cols_UI(ns("choose_cols")),
-    uiOutput(ns("split_cloze_checkbox")),
+    
 
     
     hr(),
@@ -286,6 +297,12 @@ combine_resp_Server <- function(id) {
         
       })
       
+      ### Arrange Processed Join ID
+      
+      data_processed_joined_arranged <- arrange_Server("arrange_resp", 
+                                                       data_react = data_processed_joined,
+                                                       selected = "ID")
+      
 
       # Counted Join ID ---------------------------------------------------------
       
@@ -309,6 +326,12 @@ combine_resp_Server <- function(id) {
         
       })
       
+      ### Arrange Counted Join ID
+      
+      data_counted_joined_arranged <- arrange_Server("arrange_count", 
+                                                     data_react = data_counted_joined,
+                                                     selected = "ID")
+      
       
       
       # Missing Names -----------------------------------------------------------
@@ -316,7 +339,7 @@ combine_resp_Server <- function(id) {
       
       data_processed_missing <- reactive({
         
-        data_processed_joined() %>% 
+        data_processed_joined_arranged() %>% 
           filter(if_any(starts_with("Name"), is.na))
       })
       
@@ -324,7 +347,7 @@ combine_resp_Server <- function(id) {
       
       data_processed_inapp <- reactive({
         
-        data_processed_joined() %>% 
+        data_processed_joined_arranged() %>% 
           relocate(Caution, .before = contains("Response")) %>% 
           #select(-contains("Response")) %>%
           filter(!is.na(Caution))
@@ -336,7 +359,7 @@ combine_resp_Server <- function(id) {
       
       output$table <- DT::renderDT({
         
-        data_processed_joined()
+        data_processed_joined_arranged()
         
       }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), 
       selection = 'none',
@@ -345,7 +368,7 @@ combine_resp_Server <- function(id) {
       
       output$table_counted <- DT::renderDT({
         
-        data_counted_joined()
+        data_counted_joined_arranged()
         
       }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), 
       selection = 'none',
@@ -367,8 +390,8 @@ combine_resp_Server <- function(id) {
       # Download ----------------------------------------------------------------
       
       download_xlsx_Server("download", 
-                           list("Combine Responses" = data_processed_joined(), 
-                                "Count Responses" = data_counted_joined(),
+                           list("Combine Responses" = data_processed_joined_arranged(), 
+                                "Count Responses" = data_counted_joined_arranged(),
                                 "Missing Names" = data_processed_missing(),
                                 "Caution" = data_processed_inapp()), 
                            filename = "Combined_Responses.xlsx")

@@ -78,6 +78,8 @@ extract_listfile_UI <- function(id) {
     fileInput(ns("file_id"), NULL, accept = c(".csv", ".xls",".xlsx"),buttonLabel = "Upload ID",
               placeholder = "choose file .csv or .xlsx"),
     select_id_cols_UI(ns("choose_cols")),
+    ### Arrange rows by which col
+    arrange_UI(ns("arrange")),
     
     
     ### Table
@@ -213,12 +215,18 @@ extract_listfile_Server <- function(id) {
         
       })
       
+
+      # Arrange -----------------------------------------------------------------
+      df_joined_arranged <- arrange_Server("arrange", data_react = df_joined)
+
+      
+      
       # Missing Names -----------------------------------------------------------
       
       
       df_missing <- reactive({
         
-        df_joined() %>% 
+        df_joined_arranged() %>% 
           filter(if_any(starts_with("Name"), is.na))
       })
       
@@ -226,7 +234,7 @@ extract_listfile_Server <- function(id) {
       
       output$table <- DT::renderDT({
         
-        df_joined()
+        df_joined_arranged()
         
       }, options = list(lengthMenu = c(5,10,20,50), pageLength = 5 ), 
       selection = 'none',
@@ -246,7 +254,7 @@ extract_listfile_Server <- function(id) {
       # Download ----------------------------------------------------------------
       
       download_xlsx_Server("download", 
-                           list("Check File Submission" = df_joined(), "Missing Names" = df_missing()), 
+                           list("Check File Submission" = df_joined_arranged(), "Missing Names" = df_missing()), 
                            filename = "Check_File_Submission.xlsx")
   
       #output$raw <- renderPrint({ df_joined() })

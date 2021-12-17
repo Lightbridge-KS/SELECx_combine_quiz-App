@@ -35,7 +35,7 @@ arrange_UI <- function(id,
 #' 
 arrange_Server <- function(id,
                            data_react,
-                           label = "Choose Column to Sort by:",
+                           label = "Choose column to sort rows by:",
                            selected = NULL,
                            multiple = FALSE
 ) {

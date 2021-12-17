@@ -66,8 +66,8 @@ combine_resp_UI <- function(id) {
              ),
       column(6,
              # Arrange Rows by which Col
-             arrange_UI(ns("arrange_resp"), "Sort Responses Data?"),
-             arrange_UI(ns("arrange_count"), "Sort Counts Data?")
+             arrange_UI(ns("arrange_resp"), "Sort Combine Responses Table?"),
+             arrange_UI(ns("arrange_count"), "Sort Count Responses Table?")
              )
     ),
 

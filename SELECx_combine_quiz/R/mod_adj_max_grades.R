@@ -12,16 +12,17 @@ adj_max_grades_UI <- function(id) {
   ns <- NS(id)
   tagList(
     checkboxInput(ns("check_readjust"), "Readjust maximum grades?", value = F),
-    tabsetPanel(
-      id = ns("tab_readjust"),
-      type = "hidden",
-      tabPanel("not_show"),
-      tabPanel("show", 
-               helpText("Input new maximum score below:"),
-               br(),
-               uiOutput(ns("readjust"))
-      )
-    )
+    uiOutput(ns("readjust_disp"))
+    # tabsetPanel(
+    #   id = ns("tab_readjust"),
+    #   type = "hidden",
+    #   tabPanel("not_show"),
+    #   tabPanel("show", 
+    #            helpText("Input new maximum score below:"),
+    #            br(),
+    #            uiOutput(ns("readjust"))
+    #   )
+    # )
     
     #verbatimTextOutput(ns("raw"))
   )
@@ -49,19 +50,34 @@ adj_max_grades_Server <- function(id,
       
       # Checkbox : Re-adjust ----------------------------------------------------
       
-      check_string <- reactive({  
-        
-        if(input$check_readjust){"show"}else{"not_show"}
-        
-      })
+      # check_string <- reactive({  
+      #   
+      #   if(input$check_readjust){"show"}else{"not_show"}
+      #   
+      # })
       
 
       # Update Tabset when Tick -------------------------------------------------
 
-      observeEvent(input$check_readjust,{
+      # observeEvent(input$check_readjust,{
+      #   
+      #   updateTabsetPanel(session, "tab_readjust", selected = check_string())
+      #   
+      # })
+      
+      output$readjust_disp <- renderUI({
         
-        updateTabsetPanel(session, "tab_readjust", selected = check_string())
-        
+        if(isTruthy(input$check_readjust)){
+          
+         UI_out <- list(
+           helpText("Input new maximum score below:"),
+           br(),
+           uiOutput(session$ns("readjust"))
+         )
+         
+         UI_out
+        }
+          
       })
       
 

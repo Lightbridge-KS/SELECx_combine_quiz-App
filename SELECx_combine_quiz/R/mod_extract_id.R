@@ -21,7 +21,7 @@ extract_id_col_UI <- function(id) {
     
     # Extract ID from ---------------------------------------------------------
     selectInput(ns("extract_id_col"), "Column to extract student's ID: ", 
-                choices = c("Email address","Institution", "Department"), 
+                choices = c("Email address","Institution", "Department", "ID number"), 
                 selected = "Institution",
                 width = validateCssUnit("fit-content")) # 300px
 

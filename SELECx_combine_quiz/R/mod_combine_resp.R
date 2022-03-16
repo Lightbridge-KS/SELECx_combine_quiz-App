@@ -45,19 +45,8 @@ combine_resp_UI <- function(id) {
              read_UI(ns("file"), buttonLabel = "Upload Reports", width = validateCssUnit("fit-content"), multiple = T),
              htmlOutput(ns("validate_msg")),
              helpText("4) ", "Upload ID file that has column \"Name\" for student's names and \"ID\" for student's id numbers."),
-             br()
-             ),
-      column(6,
-             # Extract ID from ---------------------------------------------------------
              br(),
-             extract_id_col_UI(ns("extract_id_col")),
-             encode_type_select_UI(ns("encode_type")),
-             )
-    ),
-
-    
-    fluidRow(
-      column(6,
+             
              fileInput(ns("file_id"), NULL, accept = c(".csv", ".xls",".xlsx"),buttonLabel = "Upload ID",
                        placeholder = "choose file .csv or .xlsx"),
              
@@ -65,7 +54,16 @@ combine_resp_UI <- function(id) {
              uiOutput(ns("split_cloze_checkbox")),
              ),
       column(6,
+             # Extract ID from ---------------------------------------------------------
+             br(),
+             extract_id_col_UI(ns("extract_id_col")),
+             tags$h5("Filter"),
+             encode_type_select_UI(ns("encode_type")),
+             mod_filter_count_select_UI(ns("filter_count")),
+             
              # Arrange Rows by which Col
+             br(),
+             tags$h5("Sort"),
              arrange_UI(ns("arrange_resp"), "Sort Combine Responses Table?"),
              arrange_UI(ns("arrange_count"), "Sort Count Responses Table?")
              )
@@ -246,6 +244,9 @@ combine_resp_Server <- function(id) {
       
 
       # Count Responses ---------------------------------------------------------
+      
+      ### Filter Count Option
+      filter_count_opt <- mod_filter_count_select_Server("filter_count")
 
       
       data_counted <- reactive({
@@ -266,7 +267,8 @@ combine_resp_Server <- function(id) {
                                  choose_encode = choose_enc()$encode,
                                  choose_time = choose_enc()$time,
                                  # If NULL or FALSE -> not split, TRUE -> Split
-                                 count_cloze_parts = isTruthy(input$split_cloze)
+                                 count_cloze_parts = isTruthy(input$split_cloze),
+                                 filter_count = filter_count_opt()
         )
         
         

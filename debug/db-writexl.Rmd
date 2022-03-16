@@ -1,0 +1,167 @@
+---
+title: "Debug: Write Excel"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # Set WD to Root
+here::i_am("debug/db-writexl.Rmd")
+library(tidyverse)
+library(here)
+library(moodleQuiz)
+```
+
+# Problems Conclusion
+
+**Problems in rows 276** strange newline Character here
+
+```{r}
+cliapp219_checksub %>%
+    slice(276) %>% 
+    select(Response_1)
+```
+
+
+## Reproduce Problems
+
+```{r cliapp219_resp_raw}
+cliapp219_resp_raw <- read_csv(here("data/problems/219-cliapp-q4-DLfail.csv"))
+```
+
+```{r}
+cliapp219_checksub <- cliapp219_resp_raw %>% 
+  moodleQuiz::check_sub(extract_id_from = "Institution")
+
+cliapp219_checksub
+```
+
+### Write to Excel can't be open ??
+
+
+```{r}
+cliapp219_checksub %>%
+  select(starts_with("R")) %>% 
+  
+  openxlsx::write.xlsx(here("data/Out/cliapp219_checksub_respcols.xlsx"),
+    overwrite = T
+  )
+```
+
+```{r}
+nrow(cliapp219_checksub)
+
+319 %/% 20
+```
+
+```{r}
+c(1:20)
+c(1:20) + 20
+
+c(1:20) + 14*20
+```
+
+### Problem Found
+
+```{r}
+cliapp219_checksub %>%
+    select(starts_with("R")) %>%
+    slice(301:319) %>%
+    openxlsx::write.xlsx(here(
+      paste0("data/Out/RespCols/", min(cliapp219_rowNums), "301-319-cliapp219_respcols.xlsx")
+    ),
+    overwrite = T
+    )
+
+```
+
+
+```{r}
+write_cliapp219_split_rows <- function() {
+  
+  for (i in 1:15) {
+    
+  cliapp219_rowNums <- 1:20 + (i-1)*20
+
+  cliapp219_checksub %>%
+    select(starts_with("R")) %>%
+    slice(cliapp219_rowNums) %>%
+    openxlsx::write.xlsx(here(
+      paste0("data/Out/RespCols/", min(cliapp219_rowNums), "-cliapp219_respcols.xlsx")
+    ),
+    overwrite = T
+    )
+  }
+}
+
+write_cliapp219_split_rows()
+```
+
+**Problems in rows 261 - 280 of Response 1 & 2**
+
+```{r}
+cliapp219_checksub %>%
+    select(starts_with("R")) %>%
+    slice(261:280) %>% 
+  view()
+```
+
+```{r write_row_per_xlsx}
+write_row_per_xlsx <- function(df){
+
+  rows <- 261:280
+  
+  for (i in rows) {
+  
+cliapp219_checksub %>%
+    select(starts_with("R")) %>%
+    slice(i) %>% 
+    openxlsx::write.xlsx(here(
+      paste0("data/Out/RespCols/Row_261-280/", 
+             "R-",i, "-cliapp219_respcols.xlsx")
+    ),
+    overwrite = T
+    )
+  }
+}
+
+write_row_per_xlsx()
+```
+
+#### Conclusion
+
+**Problems in rows 276** Weird newline chr ??
+
+```{r}
+cliapp219_checksub %>%
+    slice(276) 
+```
+
+
+```{r}
+cliapp219_checksub %>% 
+    slice(-276) %>% 
+  openxlsx::write.xlsx(here("data/Out/cliapp219_checksub_norow276.xlsx"))
+```
+
+Works !!
+
+
+## Try CSV Works
+
+```{r}
+cliapp219_checksub %>% write_csv(here("data/Out/cliapp219_checksub.csv"))
+```
+
+
+## Thai Language -> No Prob
+
+```{r}
+thai_df <- tibble(A = c("สวัสดีชาวโลก Hello wolrd"))
+thai_df
+```
+
+```{r}
+thai_df %>% openxlsx::write.xlsx(here("data/Out/thailang.xlsx"))
+```
+
+No it can be opened

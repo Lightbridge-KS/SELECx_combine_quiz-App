@@ -32,7 +32,7 @@ encode_type_select_UI <- function(id) {
   ns <- NS(id)
   tagList(
     
-    selectInput(ns("encode_type"), "Choose attempt:", choices = encode_filt_table)
+    selectInput(ns("encode_type"), "1. Choose attempt:", choices = encode_filt_table)
     
     
   )

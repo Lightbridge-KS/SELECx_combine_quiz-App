@@ -259,18 +259,18 @@ check_sub_Server <- function(id) {
                            filename = "Check_Submission.xlsx")
 
       
-      # output$raw <- renderPrint({
-      #   
-      #   head(data_joined_arranged())
-      # 
-      # })
-      # 
-      # 
-      # output$raw2 <- renderPrint({
-      #   
-      #   c( isTruthy(input$file_id) && is_valid_id() )
-      #   
-      #})
+      output$raw <- renderPrint({
+
+        head(data_joined_arranged())
+
+      })
+
+
+      output$raw2 <- renderPrint({
+
+       head(data_missing())
+
+      })
   
   
     }

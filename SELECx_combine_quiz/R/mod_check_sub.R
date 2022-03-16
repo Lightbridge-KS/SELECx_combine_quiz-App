@@ -82,8 +82,8 @@ check_sub_UI <- function(id) {
     h3("Missing Names"),
     DT::DTOutput(ns("table_miss")),
     
-    verbatimTextOutput(ns("raw")),
-    verbatimTextOutput(ns("raw2"))
+    #verbatimTextOutput(ns("raw")),
+    #verbatimTextOutput(ns("raw2"))
     
   )
 }
